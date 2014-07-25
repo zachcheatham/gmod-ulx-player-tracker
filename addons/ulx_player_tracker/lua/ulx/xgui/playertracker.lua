@@ -7,15 +7,10 @@ xplayertracker.isSearching = false
 xplayertracker.searchID = ""
 xplayertracker.searchData = {}
 
-xlib.makelabel{x=410, y=8, label="Double click to view details.", parent=xplayertracker}
-
-xplayertracker.loading = xlib.makelabel{x=160, y=8, label="Fetching Results...", parent=xplayertracker}
-xplayertracker.loading:SetVisible(false)
-
 xplayertracker.search = xlib.maketextbox{x=5, y=5, w=150, text="Search...", selectall=true, parent=xplayertracker}
 xplayertracker.search.OnEnter = function()
 	if string.len(xplayertracker.search:GetValue()) > 0 then
-		if string.len(xplayertracker.search:GetValue()) > 0 then
+		if string.len(xplayertracker.search:GetValue()) > 3 or xplayertracker.exactMatch:GetChecked() then
 			xplayertracker.list:Clear()
 			xgui.flushQueue("playertracker_populate")
 			
@@ -24,7 +19,7 @@ xplayertracker.search.OnEnter = function()
 			
 			xplayertracker.loading:SetVisible(true)
 			
-			RunConsoleCommand("_xgui", "pt_search", xplayertracker.searchID, xplayertracker.search:GetValue())
+			RunConsoleCommand("_xgui", "pt_search", xplayertracker.searchID, (xplayertracker.exactMatch:GetChecked() and "1" or "0"), xplayertracker.search:GetValue())
 		else
 			Derma_Query("That search would be too broad!", "Expensive Search Term", "Okay")
 		end
@@ -39,6 +34,11 @@ xplayertracker.search.OnEnter = function()
 		xplayertracker.populate(xgui.data.playertracker)
 	end
 end
+
+xplayertracker.loading = xlib.makelabel{x=430, y=8, label="Fetching Results...", parent=xplayertracker}
+xplayertracker.loading:SetVisible(false)
+
+xplayertracker.exactMatch = xlib.makecheckbox{x=160, y=8, label="Exact Match", parent=xplayertracker}
 
 xplayertracker.list = xlib.makelistview{x=5, y=30, w=574, h=329, multiselect=false, parent=xplayertracker}
 xplayertracker.list:AddColumn("Name")

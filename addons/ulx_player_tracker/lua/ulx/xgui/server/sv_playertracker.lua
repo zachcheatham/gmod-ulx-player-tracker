@@ -29,6 +29,9 @@ end
 function playertracker.search(ply, args)
 	local searchID = args[1]
 	table.remove(args, 1)
+	
+	local exactMatch = args[1] == "1"	
+	table.remove(args, 1)
 
 	local searchTerm = ""
 	for _, v in ipairs(args) do
@@ -39,11 +42,13 @@ function playertracker.search(ply, args)
 	local result = false
 	
 	if ULib.isValidSteamID(searchTerm) then
-		result = sql.Query("SELECT * FROM `player_tracker` WHERE `steam_id` = '" .. searchTerm .. "' OR `owner_steam_id` = '" .. searchTerm .. "' ORDER BY `last_seen`")
+		result = sql.Query("SELECT * FROM `player_tracker` WHERE `steam_id` = '" .. searchTerm .. "' OR `owner_steam_id` = '" .. searchTerm .. "'")
 	elseif ULib.isValidIP(searchTerm) then
-		result = sql.Query("SELECT * FROM `player_tracker` WHERE `ip` = '" .. searchTerm .. "' OR `ip_2` = '" .. searchTerm .. "' OR `ip_3` = '" .. searchTerm .. "' ORDER BY `last_seen`")
+		result = sql.Query("SELECT * FROM `player_tracker` WHERE `ip` = '" .. searchTerm .. "' OR `ip_2` = '" .. searchTerm .. "' OR `ip_3` = '" .. searchTerm .. "'")
+	elseif exactMatch then
+		result = sql.Query("SELECT * FROM `player_tracker` WHERE `name` LIKE '" .. searchTerm .. "'")
 	else
-		result = sql.Query("SELECT * FROM `player_tracker` WHERE `name` LIKE '%" .. searchTerm .. "%' ORDER BY `last_seen`")
+		result = sql.Query("SELECT * FROM `player_tracker` WHERE `name` LIKE '%" .. searchTerm .. "%'")
 	end
 	
 	if result == false then

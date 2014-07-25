@@ -168,7 +168,7 @@ hook.Add("PlayerAuthed", "PlayerConnectionTracker", playerAuthed)
 -- Initialize
 initDatabase()
 
-function makeString(l)
+--[[function makeString(l)
 	if l < 1 then return nil end -- Check for l < 1
 	local s = "" -- Start string
 	for i = 1, l do
@@ -200,4 +200,4 @@ local function stressDatabase()
 		end
 	end
 end
-concommand.Add("pt_stress", stressDatabase)
+concommand.Add("pt_stress", stressDatabase)]]--
