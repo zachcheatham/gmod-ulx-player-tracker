@@ -74,7 +74,7 @@ local function removePortFromIP(address)
 	local i = string.find(address, ":")
 	if not i then return address end
 	return string.sub(address, 1, i-1)
-end22
+end
 
 local function getReadyPlayers()
 	local players = {}
