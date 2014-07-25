@@ -85,8 +85,6 @@ function playertracker.init()
 	ULib.ucl.registerAccess("xgui_playertracker", "admin", "Allows the view of the player tracker.", "XGUI")
 
 	xgui.addDataType("playertracker", playertracker.getData, "xgui_playertracker", DATA_CHUNK_SIZE, 0)
-	--xgui.addDataType("playertracker_search", playertracker.getSearchData, "xgui_playertracker", 25, 0)
-	--xgui.addDataType("playertracker_names", playertracker.getNameData, "xgui_playertracker", 50, 0)
 	
 	xgui.addCmd("pt_search", playertracker.search)
 	xgui.addCmd("pt_names", playertracker.getnames)

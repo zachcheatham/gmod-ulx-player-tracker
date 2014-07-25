@@ -69,7 +69,7 @@ xplayertracker.list.SortByColumn = function(self, columnID, desc)
 				a, b = b, a
 			end
 			
-			return dataTable[a:GetColumnText(2)][timeKey] < dataTable[b:GetColumnText(2)][timeKey]
+			return tonumber(dataTable[string.gsub(a:GetColumnText(2), "*", "")][timeKey]) < tonumber(dataTable[string.gsub(b:GetColumnText(2), "*", "")][timeKey])
 		end)
 	else
 		table.sort(self.Sorted, function(a, b) 
@@ -97,23 +97,33 @@ end
 
 xplayertracker.list.OnRowRightClick = function(self, id, line)
 	local steamID = string.gsub(line:GetValue(2), "*", "")
-	
 	local menu = DermaMenu()
+	
 	menu:AddOption("Details...", function()
 		xplayertracker.showPlayerDetailsDialog(steamID, getPlayerData(steamID))
 	end)
+	
 	menu:AddSpacer()
-	menu:AddOption("View Profile", function()
+	
+	local profile = menu:AddOption("View Profile", function()
 		local profileID = util.SteamIDTo64(steamID)
 		gui.OpenURL("http://steamcommunity.com/profiles/" .. profileID)
 	end)
-	menu:AddOption("Ban", function()
+	profile:SetIcon("icon16/information.png")
+	profile:SetTextInset(0,0)
+	
+	local ban = menu:AddOption("Ban", function()
 		
 	end)
+	ban:SetIcon("icon16/delete.png")
+	ban:SetTextInset(0,0)
+	
 	menu:AddSpacer()
+	
 	menu:AddOption("Accounts on IP", function()
 		
 	end)
+	
 	menu:AddOption("Accounts with Name", function()
 		
 	end)
@@ -150,7 +160,7 @@ function xplayertracker.addPlayer(steamID, player)
 		lastSeen = os.date("%x %I:%M %p", player.last_seen)
 	end	
 	
-	xplayertracker.list:AddLine(player.name, (player.owner_steam_id and "*" or "") .. steamID, player.ip, firstSeen, lastSeen)
+	xplayertracker.list:AddLine(player.name, (tonumber(player.owner_steam_id) and "*" or "") .. steamID, player.ip, firstSeen, lastSeen)
 	xplayertracker.list:SortByColumn(5, true)
 end
 
@@ -163,19 +173,40 @@ end
 function xplayertracker.update(players)
 	if not xplayertracker.isSearching then
 		for steamID, player in pairs(players) do
+			local found = false
 			for i, line in pairs(xplayertracker.list.Lines) do
-				if line.Columns[2] == steamID then
+				if line:GetValue(2) == steamID then
+					local theTime = os.time()
+					local firstSeen = ""
+					local lastSeen = ""
+					
+					if (theTime - player.first_seen) < 1440 then
+						firstSeen = os.date("%I:%M %p", player.first_seen)
+					else
+						firstSeen = os.date("%x %I:%M %p", player.first_seen)
+					end
+					
+					if (theTime - player.last_seen) < 1440 then
+						lastSeen = os.date("%I:%M %p", player.last_seen)
+					else
+						lastSeen = os.date("%x %I:%M %p", player.last_seen)
+					end
+				
 					line:SetColumnText(1, player.name)
 					line:SetColumnText(3, player.ip)
-					line:SetColumnText(4, os.date("%x", player.first_seen))
-					line:SetColumnText(5, os.date("%x", player.last_seen))
+					line:SetColumnText(4, firstSeen)
+					line:SetColumnText(5, lastSeen)
+					
+					found = true
 					break
 				end
 			end
 			
-			local t = {}
-			t[steamID] = player
-			xplayertracker.populate(t)
+			if not found then
+				local t = {}
+				t[steamID] = player
+				xplayertracker.populate(t)
+			end
 		end
 	end
 end

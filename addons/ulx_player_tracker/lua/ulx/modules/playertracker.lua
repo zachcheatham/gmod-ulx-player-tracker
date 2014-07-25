@@ -74,13 +74,13 @@ local function removePortFromIP(address)
 	local i = string.find(address, ":")
 	if not i then return address end
 	return string.sub(address, 1, i-1)
-end
+end22
 
-local function getUnexemptPlayers(exempt)
+local function getReadyPlayers()
 	local players = {}
 
 	for _, v in pairs(player.GetAll()) do
-		if v ~= exempt then
+		if xgui.readyPlayers[v:UniqueID()] then
 			table.insert(players , v)
 		end
 	end
@@ -93,11 +93,9 @@ local function updatePlayer(ply, steamID)
 	local name = sql.SQLStr(ply:Nick(), false)
 	local curTime = os.time()
 
-	local tracked = sql.QueryRow("SELECT `name`, `ip`, `ip_2`, `ip_3` FROM `player_tracker` WHERE `steam_id` = '" .. steamID .. "'")
+	local tracked = sql.QueryRow("SELECT * FROM `player_tracker` WHERE `steam_id` = '" .. steamID .. "'")
 
 	if tracked then
-		tracked.names = sql.Query("SELECT `name`, `last_used`, `first_used` FROM `player_tracker_names` WHERE `steam_id` = '" .. steamID .. "'")
-	
 		if tracked.name ~= ply:Nick() then
 			ulx.fancyLog("#T last joined with the name #s", ply, tracked.name)
 			tracked.name = ply:Nick()
@@ -129,9 +127,9 @@ local function updatePlayer(ply, steamID)
 		local t = {}
 		t[steamID] = tracked
 		t[steamID].steam_id = nil
-		local sendPlys = getUnexemptPlayers(ply)
+		local sendPlys = getReadyPlayers()
 		if #sendPlys > 0 then
-			xgui.addData(getUnexemptPlayers(ply), "playertracker", t)
+			xgui.addData(sendPlys, "playertracker", t)
 		end
 	else
 		local result = sql.Query("INSERT INTO `player_tracker` (`steam_id`, `name`, `ip`, `first_seen`, `last_seen`) VALUES('" .. steamID .. "', " .. name .. ", '" .. ip .. "', " .. curTime .. ", " .. curTime .. ")")
@@ -151,11 +149,10 @@ local function updatePlayer(ply, steamID)
 		t[steamID].ip = ip
 		t[steamID].first_seen = curTime
 		t[steamID].last_seen = curTime
-		t[steamID].names = {{["name"] = ply:Nick(), ["first_seen"] = curTime, ["last_seen"] = curTime}}
 		
-		local sendPlys = getUnexemptPlayers(ply)
+		local sendPlys = getReadyPlayers()
 		if #sendPlys > 0 then
-			xgui.addData(getUnexemptPlayers(ply), "playertracker", t)
+			xgui.addData(sendPlys, "playertracker", t)
 		end
 		
 		updateOwnerId(ply)
@@ -163,7 +160,7 @@ local function updatePlayer(ply, steamID)
 end
 
 -- Hooks
-local function playerAuthed(ply, steamID, uniqueID)
+local function playerAuthed(ply, steamID)
 	updatePlayer(ply, steamID)
 end
 hook.Add("PlayerAuthed", "PlayerConnectionTracker", playerAuthed)
