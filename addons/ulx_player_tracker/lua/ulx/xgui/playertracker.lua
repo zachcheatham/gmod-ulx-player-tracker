@@ -84,16 +84,45 @@ xplayertracker.list.SortByColumn = function(self, columnID, desc)
 	self:InvalidateLayout()
 end
 
-xplayertracker.list.DoDoubleClick = function(self, i, item)
-	local steamID = string.gsub(item:GetValue(2), "*", "")
-	
+local function getPlayerData(steamID)
 	local data
 	if xplayertracker.isSearching then
 		data = xplayertracker.searchData[steamID]
 	else
 		data = xgui.data.playertracker[steamID]
 	end
-	xplayertracker.showPlayerDetailsDialog(steamID, data)
+	
+	return data
+end
+
+xplayertracker.list.OnRowRightClick = function(self, id, line)
+	local steamID = string.gsub(line:GetValue(2), "*", "")
+	
+	local menu = DermaMenu()
+	menu:AddOption("Details...", function()
+		xplayertracker.showPlayerDetailsDialog(steamID, getPlayerData(steamID))
+	end)
+	menu:AddSpacer()
+	menu:AddOption("View Profile", function()
+		local profileID = util.SteamIDTo64(steamID)
+		gui.OpenURL("http://steamcommunity.com/profiles/" .. profileID)
+	end)
+	menu:AddOption("Ban", function()
+		
+	end)
+	menu:AddSpacer()
+	menu:AddOption("Accounts on IP", function()
+		
+	end)
+	menu:AddOption("Accounts with Name", function()
+		
+	end)
+	menu:Open()
+end
+
+xplayertracker.list.DoDoubleClick = function(self, i, line)
+	local steamID = string.gsub(line:GetValue(2), "*", "")
+	xplayertracker.showPlayerDetailsDialog(steamID, getPlayerData(steamID))
 end
 
 function xplayertracker.populate(players, fromSearch)
