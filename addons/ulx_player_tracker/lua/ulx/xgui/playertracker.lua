@@ -50,10 +50,6 @@ xplayertracker.list.SortByColumn = function(self, columnID, desc)
 	table.Copy(self.Sorted, self.Lines)	
 	if columnID > 3 then
 		table.sort(self.Sorted, function(a, b) 
-			local steamA = a:GetColumnText(2)
-			local steamB = b:GetColumnText(2)
-			local timeA = 0
-			local timeB = 0
 			local dataTable = {}
 			local timeKey = ""
 			
