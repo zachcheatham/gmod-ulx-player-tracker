@@ -1,6 +1,44 @@
 xgui.prepareDataType("playertracker")
+xgui.prepareDataType("playertracker_search")
+xgui.prepareDataType("playertracker_names")
 
-local xplayertracker = xlib.makepanel{parent=xgui.null}
+xplayertracker = xlib.makepanel{parent=xgui.null}
+xplayertracker.isSearching = false
+xplayertracker.searchID = ""
+xplayertracker.searchData = {}
+
+xlib.makelabel{x=410, y=8, label="Double click to view details.", parent=xplayertracker}
+
+xplayertracker.loading = xlib.makelabel{x=160, y=8, label="Fetching Results...", parent=xplayertracker}
+xplayertracker.loading:SetVisible(false)
+
+xplayertracker.search = xlib.maketextbox{x=5, y=5, w=150, text="Search...", selectall=true, parent=xplayertracker}
+xplayertracker.search.OnEnter = function()
+	if string.len(xplayertracker.search:GetValue()) > 0 then
+		if string.len(xplayertracker.search:GetValue()) > 0 then
+			xplayertracker.list:Clear()
+			xgui.flushQueue("playertracker_populate")
+			
+			xplayertracker.isSearching = true
+			xplayertracker.searchID = tostring(os.time())
+			
+			xplayertracker.loading:SetVisible(true)
+			
+			RunConsoleCommand("_xgui", "pt_search", xplayertracker.searchID, xplayertracker.search:GetValue())
+		else
+			Derma_Query("That search would be too broad!", "Expensive Search Term", "Okay")
+		end
+	elseif xplayertracker.isSearching then
+		xplayertracker.list:Clear()
+		xgui.flushQueue("playertracker_populate")
+	
+		xplayertracker.isSearching = false
+		xplayertracker.searchID = ""
+		xplayertracker.searchData = {}
+		
+		xplayertracker.populate(xgui.data.playertracker)
+	end
+end
 
 xplayertracker.list = xlib.makelistview{x=5, y=30, w=574, h=329, multiselect=false, parent=xplayertracker}
 xplayertracker.list:AddColumn("Name")
@@ -9,77 +47,86 @@ xplayertracker.list:AddColumn("IP Address")
 xplayertracker.list:AddColumn("First Seen")
 xplayertracker.list:AddColumn("Last Seen")
 xplayertracker.list.DoDoubleClick = function(self, i, item)
-	local steamID = item:GetValue(2)
-	local data = xgui.data.playertracker[steamID]
-	xgui.showPlayerDetailsDialog(steamID, data)
+	local steamID = string.gsub(item:GetValue(2), "*", "")
+	
+	local data
+	if xplayertracker.isSearching then
+		data = xplayertracker.searchData[steamID]
+	else
+		data = xgui.data.playertracker[steamID]
+	end
+	xplayertracker.showPlayerDetailsDialog(steamID, data)
 end
 
-xlib.makelabel{x=410, y=8, label="Double click to view details.", parent=xplayertracker}
-
-xplayertracker.search = xlib.maketextbox{x=5, y=5, w=150, text="Search...", selectall=true, parent=xplayertracker}
-
-xplayertracker.search.OnEnter = function()
-	xplayertracker.list:Clear()
-	xgui.flushQueue("playertracker_populate")
-	xplayertracker.populate(nil, true)
-end
-
-function xplayertracker.populate(players, doSearch)
-	if not doSearch then
+function xplayertracker.populate(players, fromSearch)
+	if (fromSearch or false) == xplayertracker.isSearching then
 		for steamID, player in pairs(players) do
 			xgui.queueFunctionCall(xplayertracker.addPlayer, "playertracker_populate", steamID, player)
-		end
-	else
-		local searchTerm = xplayertracker.search:GetValue()
-		local searchType = 0
-		if searchTerm == "Search..." or string.len(searchTerm) == 0 then
-			searchType = 3
-		elseif ULib.isValidSteamID(searchTerm) then
-			searchType = 1
-		elseif ULib.isValidIP(searchTerm) then
-			searchType = 2
-		end
-		
-		for steamID, player in pairs(xgui.data.playertracker) do
-			if searchType == 3 then
-				xplayertracker.addPlayer(steamID, player)
-			elseif searchType == 0 and (string.find(player.name, searchTerm)) then
-				xplayertracker.addPlayer(steamID, player)
-			elseif searchType == 1 and (steamID == searchTerm or player.owner_steam_id == searchTerm) then
-				xplayertracker.addPlayer(steamID, player)
-			elseif searchType == 2 and (player.ip == searchTerm or ((player.ip_2 and player.ip_2 == searchTerm) or (player.ip_3 and player_ip_3 == searchTerm))) then
-				xplayertracker.addPlayer(steamID, player)
-			end
 		end
 	end
 end
 
 function xplayertracker.addPlayer(steamID, player)
-	xplayertracker.list:AddLine(player.name, (player.owner_steam_id and "*" or "") .. steamID, player.ip, os.date("%x", player.first_seen), os.date("%x", player.last_seen))
+	local theTime = os.time()
+	local firstSeen = ""
+	local lastSeen = ""
+	
+	if (theTime - player.first_seen) < 1440 then
+		firstSeen = os.date("%I:%M %p", player.first_seen)
+	else
+		firstSeen = os.date("%x %I:%M %p", player.first_seen)
+	end
+	
+	if (theTime - player.last_seen) < 1440 then
+		lastSeen = os.date("%I:%M %p", player.last_seen)
+	else
+		lastSeen = os.date("%x %I:%M %p", player.last_seen)
+	end	
+	
+	xplayertracker.list:AddLine(player.name, (player.owner_steam_id and "*" or "") .. steamID, player.ip, firstSeen, lastSeen)
+	xplayertracker.list:SortByColumn(5, false)
 end
 
 function xplayertracker.clear()
-	xplayertracker.search:SetText("Search...")
-	xplayertracker.list:Clear()
+	if not xplayertracker.isSearching then
+		xplayertracker.list:Clear()
+	end
 end
 
 function xplayertracker.update(players)
-	for steamID, player in pairs(players) do
-		for i, line in pairs(xplayertracker.list.Lines) do
-			if line.Columns[2] == steamID then
-				line:SetColumnText(1, player.name)
-				line:SetColumnText(3, player.ip)
-				line:SetColumnText(4, os.date("%x", player.first_seen))
-				line:SetColumnText(5, os.date("%x", player.last_seen))
-				break
+	if not xplayertracker.isSearching then
+		for steamID, player in pairs(players) do
+			for i, line in pairs(xplayertracker.list.Lines) do
+				if line.Columns[2] == steamID then
+					line:SetColumnText(1, player.name)
+					line:SetColumnText(3, player.ip)
+					line:SetColumnText(4, os.date("%x", player.first_seen))
+					line:SetColumnText(5, os.date("%x", player.last_seen))
+					break
+				end
 			end
-		end
-		
-		if xplayertracker.search:GetValue() == "" or xplayertracker.search:GetValue() == "Search..." then
+			
 			local t = {}
 			t[steamID] = player
 			xplayertracker.populate(t)
 		end
+	end
+end
+
+xgui.hookEvent("playertracker", "process", xplayertracker.populate)
+xgui.hookEvent("playertracker", "clear", xplayertracker.clear)
+xgui.hookEvent("playertracker", "add", xplayertracker.update)
+
+function xplayertracker.searchRecievedData(id, data)
+	if id == xplayertracker.searchID then
+		table.Merge(xplayertracker.searchData, data)
+		xplayertracker.populate(data, true)
+	end
+end
+
+function xplayertracker.searchCompleted(id)
+	if id == xplayertracker.searchID then
+		xplayertracker.loading:SetVisible(false)
 	end
 end
 
@@ -99,7 +146,7 @@ local function copyText(pnl)
 	end
 end
 
-function xgui.showPlayerDetailsDialog(steamID, data)
+function xplayertracker.showPlayerDetailsDialog(steamID, data)
 	local window = xlib.makeframe{label="Details", w=265, h=263, skin=xgui.settings.skin}
 	
 	local nameLabel = xlib.makelabel{label="Name:", x=22, y=33, parent=window}
@@ -149,7 +196,4 @@ function xgui.showPlayerDetailsDialog(steamID, data)
 	end
 end
 
-xgui.hookEvent("playertracker", "process", xplayertracker.populate)
-xgui.hookEvent("playertracker", "clear", xplayertracker.clear)
-xgui.hookEvent("playertracker", "add", xplayertracker.update)
 xgui.addModule("Players", xplayertracker, "icon16/user_green.png", "xgui_playertracker")
