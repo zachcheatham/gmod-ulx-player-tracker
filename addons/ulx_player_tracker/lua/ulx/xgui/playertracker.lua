@@ -46,6 +46,48 @@ xplayertracker.list:AddColumn("Steam ID")
 xplayertracker.list:AddColumn("IP Address")
 xplayertracker.list:AddColumn("First Seen")
 xplayertracker.list:AddColumn("Last Seen")
+xplayertracker.list.SortByColumn = function(self, columnID, desc)
+	table.Copy(self.Sorted, self.Lines)	
+	if columnID > 3 then
+		table.sort(self.Sorted, function(a, b) 
+			local steamA = a:GetColumnText(2)
+			local steamB = b:GetColumnText(2)
+			local timeA = 0
+			local timeB = 0
+			local dataTable = {}
+			local timeKey = ""
+			
+			if xplayertracker.isSearching then
+				dataTable = xplayertracker.searchData
+			else
+				dataTable = xgui.data.playertracker
+			end
+			
+			if columnID == 4 then
+				timeKey = "first_seen"
+			else
+				timeKey = "last_seen"
+			end
+			
+			if (desc) then
+				a, b = b, a
+			end
+			
+			return dataTable[a:GetColumnText(2)][timeKey] < dataTable[b:GetColumnText(2)][timeKey]
+		end)
+	else
+		table.sort(self.Sorted, function(a, b) 
+			if (desc) then
+				a, b = b, a
+			end
+			return a:GetColumnText(columnID) < b:GetColumnText(columnID)
+		end)
+	end
+	
+	self:SetDirty( true )
+	self:InvalidateLayout()
+end
+
 xplayertracker.list.DoDoubleClick = function(self, i, item)
 	local steamID = string.gsub(item:GetValue(2), "*", "")
 	
@@ -84,7 +126,7 @@ function xplayertracker.addPlayer(steamID, player)
 	end	
 	
 	xplayertracker.list:AddLine(player.name, (player.owner_steam_id and "*" or "") .. steamID, player.ip, firstSeen, lastSeen)
-	xplayertracker.list:SortByColumn(5, false)
+	xplayertracker.list:SortByColumn(5, true)
 end
 
 function xplayertracker.clear()
