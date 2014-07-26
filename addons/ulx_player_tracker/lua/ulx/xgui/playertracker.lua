@@ -1,6 +1,4 @@
 xgui.prepareDataType("playertracker")
-xgui.prepareDataType("playertracker_search")
-xgui.prepareDataType("playertracker_names")
 
 xplayertracker = xlib.makepanel{parent=xgui.null}
 xplayertracker.isSearching = false
@@ -80,7 +78,7 @@ xplayertracker.list.SortByColumn = function(self, columnID, desc)
 		end)
 	end
 	
-	self:SetDirty( true )
+	self:SetDirty(true)
 	self:InvalidateLayout()
 end
 
@@ -99,9 +97,11 @@ xplayertracker.list.OnRowRightClick = function(self, id, line)
 	local steamID = string.gsub(line:GetValue(2), "*", "")
 	local menu = DermaMenu()
 	
-	menu:AddOption("Details...", function()
+	local details = menu:AddOption("Details...", function()
 		xplayertracker.showPlayerDetailsDialog(steamID, getPlayerData(steamID))
 	end)
+	details:SetIcon("icon16/information.png")
+	details:SetTextInset(0,0)
 	
 	menu:AddSpacer()
 	
@@ -109,24 +109,35 @@ xplayertracker.list.OnRowRightClick = function(self, id, line)
 		local profileID = util.SteamIDTo64(steamID)
 		gui.OpenURL("http://steamcommunity.com/profiles/" .. profileID)
 	end)
-	profile:SetIcon("icon16/information.png")
+	profile:SetIcon("icon16/application_go.png")
 	profile:SetTextInset(0,0)
 	
 	local ban = menu:AddOption("Ban", function()
-		
+		local data = getPlayerData(steamID)
+		xplayertracker.showBanWindow(data.name, steamID)
 	end)
 	ban:SetIcon("icon16/delete.png")
 	ban:SetTextInset(0,0)
 	
 	menu:AddSpacer()
 	
-	menu:AddOption("Accounts on IP", function()
-		
+	local ips = menu:AddOption("Accounts on IP", function()
+		local data = getPlayerData(steamID)
+		xplayertracker.search:SetValue(data.ip)
+		xplayertracker.search.OnEnter()
 	end)
+	ips:SetIcon("icon16/world_go.png")
+	ips:SetTextInset(0,0)
 	
-	menu:AddOption("Accounts with Name", function()
-		
+	local names = menu:AddOption("Accounts with Name", function()
+		local data = getPlayerData(steamID)
+		xplayertracker.search:SetValue(data.name)
+		xplayertracker.exactMatch:SetChecked(true)
+		xplayertracker.search.OnEnter()
 	end)
+	names:SetIcon("icon16/group_go.png")
+	names:SetTextInset(0,0)
+	
 	menu:Open()
 end
 
@@ -138,6 +149,10 @@ end
 function xplayertracker.populate(players, fromSearch)
 	if (fromSearch or false) == xplayertracker.isSearching then
 		for steamID, player in pairs(players) do
+			if not fromSearch then
+				player = table.Merge(player, xgui.data.playertracker[steamID])
+			end
+		
 			xgui.queueFunctionCall(xplayertracker.addPlayer, "playertracker_populate", steamID, player)
 		end
 	end
@@ -148,19 +163,19 @@ function xplayertracker.addPlayer(steamID, player)
 	local firstSeen = ""
 	local lastSeen = ""
 	
-	if (theTime - player.first_seen) < 1440 then
+	if (theTime - player.first_seen) < 86400 then
 		firstSeen = os.date("%I:%M %p", player.first_seen)
 	else
 		firstSeen = os.date("%x %I:%M %p", player.first_seen)
 	end
 	
-	if (theTime - player.last_seen) < 1440 then
+	if (theTime - player.last_seen) < 86400 then
 		lastSeen = os.date("%I:%M %p", player.last_seen)
 	else
 		lastSeen = os.date("%x %I:%M %p", player.last_seen)
-	end	
+	end
 	
-	xplayertracker.list:AddLine(player.name, (tonumber(player.owner_steam_id) and "*" or "") .. steamID, player.ip, firstSeen, lastSeen)
+	xplayertracker.list:AddLine(player.name, ((not player.owner_steam_id or tonumber(player.owner_steam_id) == 0) and "" or "*") .. steamID, player.ip, firstSeen, lastSeen)
 	xplayertracker.list:SortByColumn(5, true)
 end
 
@@ -175,18 +190,20 @@ function xplayertracker.update(players)
 		for steamID, player in pairs(players) do
 			local found = false
 			for i, line in pairs(xplayertracker.list.Lines) do
-				if line:GetValue(2) == steamID then
+				if string.gsub(line:GetValue(2), "*", "") == steamID then
+					player = table.Merge(player, xgui.data.playertracker[steamID])
+				
 					local theTime = os.time()
 					local firstSeen = ""
 					local lastSeen = ""
 					
-					if (theTime - player.first_seen) < 1440 then
+					if (theTime - player.first_seen) < 86400 then
 						firstSeen = os.date("%I:%M %p", player.first_seen)
 					else
 						firstSeen = os.date("%x %I:%M %p", player.first_seen)
 					end
 					
-					if (theTime - player.last_seen) < 1440 then
+					if (theTime - player.last_seen) < 86400 then
 						lastSeen = os.date("%I:%M %p", player.last_seen)
 					else
 						lastSeen = os.date("%x %I:%M %p", player.last_seen)
@@ -228,70 +245,42 @@ function xplayertracker.searchCompleted(id)
 	end
 end
 
-local function copyText(pnl)
-	if pnl:GetClassName() == "TextEntry" then
-		SetClipboardText(pnl:GetValue())
-		ULib.tsay(_, '"' .. pnl:GetValue() .. '"' .. " has been copied to the clipboard.")
-	elseif pnl:GetName() == "List" then
-		local i = pnl:GetSelectedLine()
-		if i then
-			local value = pnl:GetLine(i):GetValue(1)
-			if string.len(value) > 0 then
-				SetClipboardText(value)
-				ULib.tsay(_, '"' .. value .. '"' .. " has been copied to the clipboard.")
+xgui.addModule("Players", xplayertracker, "icon16/user_green.png", "xgui_playertracker")
+
+-- Copy pasta from xgui bans with name / steamID options
+function xplayertracker.showBanWindow(name, steamID)
+	local xgui_banwindow = xlib.makeframe{label="Ban " .. name, w=285, h=155, skin=xgui.settings.skin}
+	xlib.makelabel{x=23, y=33, label="SteamID:", parent=xgui_banwindow}
+	xlib.makelabel{x=28, y=58, label="Reason:", parent=xgui_banwindow}
+	xlib.makelabel{x=10, y=83, label="Ban Length:", parent=xgui_banwindow}
+	local reason = xlib.makecombobox{x=75, y=55, w=200, parent=xgui_banwindow, enableinput=true, selectall=true, choices=ULib.cmds.translatedCmds["ulx ban"].args[4].completes}
+	local banpanel = ULib.cmds.NumArg.x_getcontrol(ULib.cmds.translatedCmds["ulx ban"].args[3], 2)
+	banpanel:SetParent(xgui_banwindow)
+	banpanel.interval:SetParent(xgui_banwindow)
+	banpanel.interval:SetPos(200, 80)
+	banpanel.val:SetParent(xgui_banwindow)
+	banpanel.val:SetPos(75, 100)
+	banpanel.val:SetWidth(200)
+
+	local steamIDBox = xlib.maketextbox{x=75, y=30, w=200, selectall=true, disabled=true, parent=xgui_banwindow}
+	steamIDBox:SetValue(steamID)
+	
+	xlib.makebutton{x=165, y=125, w=75, label="Cancel", parent=xgui_banwindow}.DoClick = function()
+		xgui_banwindow:Remove()
+	end
+	xlib.makebutton{x=45, y=125, w=75, label="Ban!", parent=xgui_banwindow}.DoClick = function()
+		local isOnline = false
+		for k, v in ipairs(player.GetAll()) do
+			if v:SteamID() == steamIDBox:GetValue() then
+				isOnline = v
+				break
 			end
 		end
+		if not isOnline then
+			RunConsoleCommand("ulx", "banid", steamIDBox:GetValue(), banpanel:GetValue(), reason:GetValue())
+		else
+			RunConsoleCommand("ulx", "ban", "$" .. ULib.getUniqueIDForPlayer(isOnline), banpanel:GetValue(), reason:GetValue())
+		end
+		xgui_banwindow:Remove()
 	end
 end
-
-function xplayertracker.showPlayerDetailsDialog(steamID, data)
-	local window = xlib.makeframe{label="Details", w=265, h=263, skin=xgui.settings.skin}
-	
-	local nameLabel = xlib.makelabel{label="Name:", x=22, y=33, parent=window}
-	local nameBox = xlib.maketextbox{x=55, y=30, w=160, text=data.name, parent=window}
-	nameBox:SetEditable(false)
-	local nameCopyButton = xlib.makebutton{x=220, y=30, h=20, w=40, label="Copy", parent=window}
-	nameCopyButton.DoClick = function()
-		copyText(nameBox)
-	end
-	
-	local steamIDLabel = xlib.makelabel{label="Steam ID:", x=5, y=58, parent=window}
-	local steamIDBox = xlib.maketextbox{x=55, y=55, w=160, text=steamID, parent=window}
-	steamIDBox:SetEditable(false)
-	local steamIDCopyButton = xlib.makebutton{x=220, y=55, h=20, w=40, label="Copy", parent=window}
-	steamIDCopyButton.DoClick = function()
-		copyText(steamIDBox)
-	end
-	
-	local profileIDLabel = xlib.makelabel{label="Profile ID:", x=5, y=83, parent=window}
-	local profileIDBox = xlib.maketextbox{x=55, y=80, w=160, text=util.SteamIDTo64(steamID), parent=window}
-	profileIDBox:SetEditable(false)
-	local profileIDCopyButton = xlib.makebutton{x=220, y=80, h=20, w=40, label="Copy", parent=window}
-	profileIDCopyButton.DoClick = function()
-		copyText(profileIDBox)
-	end
-	
-	local firstSeenLabel = xlib.makelabel{label="First Seen:  " .. os.date("%x %I:%M %p", data.first_seen), x=5, y=105, parent=window}
-	local lastSeenLabel = xlib.makelabel{label="Last Seen:  " .. os.date("%x %I:%M %p", data.last_seen), x=5, y=123, parent=window}
-
-	local ipList = xlib.makelistview{x=5, y=143, w=210, h=73, multiselect=false, parent=window}
-	ipList:SetName("List")
-	ipList:AddColumn("Recent IP Addresses")
-	ipList:AddLine(data.ip)
-	ipList:AddLine(data.ip_2)
-	ipList:AddLine(data.ip_3)
-	local ipCopyButton = xlib.makebutton{x=220, y=143, h=20, w=40, label="Copy", parent=window}
-	ipCopyButton.DoClick = function()
-		copyText(ipList)
-	end
-	
-	local familyShareLabel = xlib.makelabel{label="Family Sharing Owner:", x=5, y=221, parent=window}
-	local familyShareBox = xlib.maketextbox{x=5, y=237, w=210, text=(data.owner_steam_id or "N/A"), parent=window}
-	familyShareBox:SetEditable(false)
-	local familyShareCopyButton = xlib.makebutton{x=220, y=237, h=20, w=40, label="Copy", parent=window}
-	familyShareCopyButton.DoClick = function()
-		copyText(familyShareBox)
-	end
-end
-
-xgui.addModule("Players", xplayertracker, "icon16/user_green.png", "xgui_playertracker")

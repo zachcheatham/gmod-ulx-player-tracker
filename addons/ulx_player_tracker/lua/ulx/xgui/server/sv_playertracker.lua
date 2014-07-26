@@ -1,32 +1,51 @@
 local DATA_CHUNK_SIZE = 60
 
-local playertracker = {}
+ulx.playertracker.xgui = {}
 
-function playertracker.getData()
-	local result = sql.Query("SELECT * FROM `player_tracker` ORDER BY `last_seen` DESC LIMIT 100")
-	local data = {}
-	
-	if result == false then
-		error("Error getting entries from database! SQL Error: " .. sql.LastError(result))
-	elseif result then
-		for i, v in ipairs(result) do
-			if v.owner_steam_id == "0" then
-				v.owner_steam_id = nil
-			end
-			
-			if v.ip_2 == "NULL" then v.ip_2 = nil end
-			if v.ip_3 == "NULL" then v.ip_3 = nil end
-			if v.owner_steam_id == "NULL" then v.owner_steam_id = nil end
+local function getReadyPlayers()
+	local players = {}
 
-			data[v.steam_id] = v
-			data[v.steam_id].steam_id = nil
+	for _, v in pairs(player.GetAll()) do
+		if xgui.readyPlayers[v:UniqueID()] and v:query("xgui_playertracker") then
+			table.insert(players , v)
 		end
-	end	
+	end
+	
+	return players
+end
+
+local function prepareData(data)
+	local newData = table.Copy(data)
+
+	newData.steam_id = nil
+	if newData.owner_steam_id == 0 then
+		newData.owner_steam_id = nil
+	end
+	
+	return newData
+end
+
+function ulx.playertracker.xgui.getData()
+	local data = ulx.playertracker.sql.fetchRecentPlayers()
+	
+	for k, v in pairs(data) do
+		data[k] = prepareData(v)
+	end
 	
 	return data
 end
 
-function playertracker.search(ply, args)
+function ulx.playertracker.xgui.sendDataUpdate(steamID, data)
+	local t = {}
+	t[steamID] = prepareData(data)
+	
+	local sendPlys = getReadyPlayers()
+	if #sendPlys > 0 then
+		xgui.addData(sendPlys, "playertracker", t)
+	end
+end
+
+function ulx.playertracker.xgui.search(ply, args)
 	local searchID = args[1]
 	table.remove(args, 1)
 	
@@ -37,44 +56,12 @@ function playertracker.search(ply, args)
 	for _, v in ipairs(args) do
 		searchTerm = searchTerm .. " " .. v
 	end
-	searchTerm = sql.SQLStr(searchTerm:gsub("^%s*(.-)%s*$", "%1"), true)
-
-	local result = false
 	
-	if ULib.isValidSteamID(searchTerm) then
-		result = sql.Query("SELECT * FROM `player_tracker` WHERE `steam_id` = '" .. searchTerm .. "' OR `owner_steam_id` = '" .. searchTerm .. "'")
-	elseif ULib.isValidIP(searchTerm) then
-		result = sql.Query("SELECT * FROM `player_tracker` WHERE `ip` = '" .. searchTerm .. "' OR `ip_2` = '" .. searchTerm .. "' OR `ip_3` = '" .. searchTerm .. "'")
-	elseif exactMatch then
-		result = sql.Query("SELECT * FROM `player_tracker` WHERE `name` LIKE '" .. searchTerm .. "'")
-	else
-		result = sql.Query("SELECT * FROM `player_tracker` WHERE `name` LIKE '%" .. searchTerm .. "%'")
-	end
-	
-	if result == false then
-		error("Error searching for player in database! SQL Error: " .. sql.LastError(result))
-	end
-	
-	local data = {}
-	
-	if result then
-		for _, v in ipairs(result) do
-			if v.owner_steam_id == "0" then
-				v.owner_steam_id = nil
-			end
-			
-			if v.ip_2 == "NULL" then v.ip_2 = nil end
-			if v.ip_3 == "NULL" then v.ip_3 = nil end
-			if v.owner_steam_id == "NULL" then v.owner_steam_id = nil end
-
-			data[v.steam_id] = v
-			data[v.steam_id].steam_id = nil
-		end
-	end
+	local data = ulx.playertracker.sql.doSearch(searchTerm, exactMatch)
 	
 	local chunk = {}
 	for k, v in pairs(data) do
-		chunk[k] = v
+		chunk[k] = prepareData(v)
 		
 		if table.Count(chunk) >= DATA_CHUNK_SIZE then
 			ULib.queueFunctionCall(ULib.clientRPC, ply, "xplayertracker.searchRecievedData", searchID, chunk)
@@ -86,13 +73,13 @@ function playertracker.search(ply, args)
 	ULib.queueFunctionCall(ULib.clientRPC, ply, "xplayertracker.searchCompleted", searchID)
 end
 
-function playertracker.init()
+function ulx.playertracker.xgui.init()
 	ULib.ucl.registerAccess("xgui_playertracker", "admin", "Allows the view of the player tracker.", "XGUI")
 
-	xgui.addDataType("playertracker", playertracker.getData, "xgui_playertracker", DATA_CHUNK_SIZE, 0)
+	xgui.addDataType("playertracker", ulx.playertracker.xgui.getData, "xgui_playertracker", DATA_CHUNK_SIZE, 0)
 	
-	xgui.addCmd("pt_search", playertracker.search)
-	xgui.addCmd("pt_names", playertracker.getnames)
+	xgui.addCmd("pt_search",ulx.playertracker.xgui.search)
+	--xgui.addCmd("pt_names", playertracker.getnames)
 end
 
-xgui.addSVModule("playertracker", playertracker.init)
+xgui.addSVModule("playertracker", ulx.playertracker.xgui.init)
