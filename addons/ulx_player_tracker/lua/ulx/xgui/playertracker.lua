@@ -121,14 +121,6 @@ xplayertracker.list.OnRowRightClick = function(self, id, line)
 	
 	menu:AddSpacer()
 	
-	local ips = menu:AddOption("Accounts on IP", function()
-		local data = getPlayerData(steamID)
-		xplayertracker.search:SetValue(data.ip)
-		xplayertracker.search.OnEnter()
-	end)
-	ips:SetIcon("icon16/world_go.png")
-	ips:SetTextInset(0,0)
-	
 	local names = menu:AddOption("Accounts with Name", function()
 		local data = getPlayerData(steamID)
 		xplayertracker.search:SetValue(data.name)
@@ -137,6 +129,14 @@ xplayertracker.list.OnRowRightClick = function(self, id, line)
 	end)
 	names:SetIcon("icon16/group_go.png")
 	names:SetTextInset(0,0)
+	
+	local ips = menu:AddOption("Accounts on IP", function()
+		local data = getPlayerData(steamID)
+		xplayertracker.search:SetValue(data.ip)
+		xplayertracker.search.OnEnter()
+	end)
+	ips:SetIcon("icon16/world_go.png")
+	ips:SetTextInset(0,0)
 	
 	menu:Open()
 end

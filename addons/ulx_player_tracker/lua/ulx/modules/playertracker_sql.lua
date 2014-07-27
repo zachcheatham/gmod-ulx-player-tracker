@@ -49,8 +49,7 @@ function ulx.playertracker.sql.init()
 		local result = sql.Query("CREATE TABLE `player_tracker_names` (\
 								`steam_id` VARCHAR(20),\
 								`name` VARCHAR(32),\
-								`first_used` INTEGER(10),\
-								`last_used` INTEGER(10),\
+								`timestamp` INTEGER(10),\
 								PRIMARY KEY(`steam_id`, `name`)\
 								);")
 		if not sql.TableExists("player_tracker_names") then
@@ -118,6 +117,22 @@ function ulx.playertracker.sql.doSearch(searchTerm, exactMatch)
 	return data
 end
 
+function ulx.playertracker.sql.getNames(steamID)
+	local result = sql.Query("SELECT * FROM `player_tracker_names` WHERE `steam_id` = '" .. steamID .. "'")
+	if result == false then
+		error("Error fetching names from the database! SQL Error: " .. sql.LastError(result))
+		return {}
+	end
+	
+	local data = {}
+	if result then
+		for i, v in ipairs(result) do
+			table.insert(data, cleanSQLRow(v))
+		end
+	end
+	return data
+end
+
 function ulx.playertracker.sql.createPlayer(steamID, data)
 	local name = sql.SQLStr(data.name, false)
 
@@ -126,48 +141,43 @@ function ulx.playertracker.sql.createPlayer(steamID, data)
 		error("Error starting track on " .. steamID .. "! SQL Error: " .. sql.LastError(result))
 	end
 	
-	result = sql.Query("INSERT INTO `player_tracker_names` (`steam_id`, `name`, `first_used`, `last_used`) VALUES ('" .. steamID .. "', " .. name .. ", " .. data.first_seen .. ", " .. data.first_seen .. ")")
+	result = sql.Query("INSERT INTO `player_tracker_names` (`steam_id`, `name`, `timestamp`) VALUES ('" .. steamID .. "', " .. name .. ", " .. data.first_seen .. ")")
 	if result == false then
 		error("Error starting name track on " .. steamID .. "! SQL Error: " .. sql.LastError(result))
 	end
 end
 
-function ulx.playertracker.sql.recordName(steamID, name)
-	name = sql.SQLStr(name, false)
-
-	local result = sql.Query("UPDATE `player_tracker` SET `name` = " .. name .. " WHERE `steam_id` = '" .. steamID .. "'")
-	if result == false then
-		ErrorNoHalt("Failed to update player name. SQL Error: " .. sql.LastError(result) .. "\n")
-	end
-	
-	result = sql.Query("INSERT OR IGNORE INTO `player_tracker_names` (`steam_id`, `name`, `first_used`, `last_used`) VALUES('" .. steamID .. "', " .. name .. ", " .. os.time() .. ", " .. os.time() .. ");\
-						UPDATE `player_tracker_names` SET `last_used` = " .. os.time() .. " WHERE `steam_id` = '" .. steamID .. "' AND `name` LIKE " .. name .. ";")
+function ulx.playertracker.sql.recordNameChange(steamID, name)	
+	local result = sql.Query("REPLACE INTO `player_tracker_names` (`steam_id`, `name`, `timestamp`) VALUES('" .. steamID .. "', '" .. name .. "', " .. os.time() .. ")")
 	
 	if result == false then
 		ErrorNoHalt("Failed to update player name list. SQL Error: " .. sql.LastError(result) .. "\n")
 	end
 end
 
-function ulx.playertracker.sql.recordAddress(steamID, ipAddress, ipAddress2, ipAddress3)
-	local queryString = "UPDATE `player_tracker` SET `ip` = '" .. ipAddress .. "'"
+-- WARNING: name needs to be sql escaped before going into this function
+function ulx.playertracker.sql.playerHeartbeat(steamID, name, ip1, ip2, ip3)
+	local queryString = "UPDATE `player_tracker` SET `last_seen` = " .. os.time()
 	
-	if ipAddress2 then
-		queryString = queryString .. ", `ip_2` = '" .. ipAddress2 .. "'"
+	if name then
+		queryString = queryString .. ", `name` = '" .. name .. "'"
 	end
 	
-	if ipAddress3 then
-		queryString = queryString .. ", `ip_3` = '" .. ipAddress3 .. "'"
+	if ip1 then
+		queryString = queryString .. ", `ip_1` = '" .. ip1 .. "'"
+	end
+	
+	if ip2 then
+		queryString = queryString .. ", `ip_2` = '" .. ip2 .. "'"
+	end
+	
+	if ip3 then
+		queryString = queryString .. ", `ip_3` = '" .. ip3 .. "'"
 	end
 	
 	queryString = queryString .. " WHERE `steam_id` = '" .. steamID .. "'"
-	
-	print ("DEBUG: " .. queryString)
-	
-	sql.Query(queryString)
-end
 
-function ulx.playertracker.sql.playerHeartbeat(steamID)
-	sql.Query("UPDATE `player_tracker` SET `last_seen` = " .. os.time() .. " WHERE `steam_id` = '" .. steamID .. "'")
+	sql.Query(queryString)
 end
 
 function ulx.playertracker.sql.setOwnerSteamID(steamID, ownerSteamID)

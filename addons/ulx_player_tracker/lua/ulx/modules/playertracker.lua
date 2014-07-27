@@ -15,24 +15,30 @@ function ulx.playertracker.updatePlayer(ply, steamID)
 	local tracked = ulx.playertracker.sql.fetchPlayer(steamID)
 	
 	if tracked then
-		ulx.playertracker.sql.playerHeartbeat(steamID)
+		local escapedName = ""
+		local nameChange = false
+		local ipChange = false
+		
 		tracked.last_seen = curTime
 	
 		if tracked.name ~= ply:Nick() then
 			ulx.fancyLog("#T last joined with the name #s", ply, tracked.name)
+			
+			nameChange = true
 			tracked.name = ply:Nick()
-		
-			ulx.playertracker.sql.recordName(steamID, tracked.name)
+			
+			escapedName = sql.SQLStr(tracked.name, true)
+			ulx.playertracker.sql.recordNameChange(steamID, escapedName)
 		end
 	
 		if tracked.ip ~= ip then
+			ipChange = true
 			tracked.ip_3 = tracked.ip_2
 			tracked.ip_2 = tracked.ip
 			tracked.ip = ip
-			
-			ulx.playertracker.sql.recordAddress(steamID, tracked.ip, tracked.ip_2, tracked.ip_3)
 		end
-		
+
+		ulx.playertracker.sql.playerHeartbeat(steamID, (nameChange and escapedName or false), (ipChange and tracked.ip or false), (ipChange and tracked.ip_2 or false), (ipChange and tracked.ip_3 or false))
 		ulx.playertracker.xgui.sendDataUpdate(steamID, tracked)
 	else
 		local data = {}

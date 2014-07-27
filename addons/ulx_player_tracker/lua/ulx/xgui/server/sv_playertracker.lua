@@ -1,4 +1,5 @@
 local DATA_CHUNK_SIZE = 60
+local DATA_NAMES_CHUNK_SIZE = 100
 
 ulx.playertracker.xgui = {}
 
@@ -49,7 +50,7 @@ function ulx.playertracker.xgui.search(ply, args)
 	local searchID = args[1]
 	table.remove(args, 1)
 	
-	local exactMatch = args[1] == "1"	
+	local exactMatch = args[1] == "1"
 	table.remove(args, 1)
 
 	local searchTerm = ""
@@ -73,13 +74,34 @@ function ulx.playertracker.xgui.search(ply, args)
 	ULib.queueFunctionCall(ULib.clientRPC, ply, "xplayertracker.searchCompleted", searchID)
 end
 
+function ulx.playertracker.xgui.getNames(ply, args)
+	local steamID = ""
+	for _, v in ipairs(args) do
+		steamID = steamID .. v
+	end
+	
+	local data = ulx.playertracker.sql.getNames(steamID)
+
+	local chunk = {}
+	for k, v in pairs(data) do
+		table.insert(chunk, prepareData(v))
+		
+		if table.Count(chunk) >= DATA_NAMES_CHUNK_SIZE then
+			ULib.queueFunctionCall(ULib.clientRPC, ply, "xplayertracker.recievedNames", steamID, chunk)
+			chunk = {}
+		end
+	end
+	
+	ULib.queueFunctionCall(ULib.clientRPC, ply, "xplayertracker.recievedNames", steamID, chunk)
+end
+
 function ulx.playertracker.xgui.init()
 	ULib.ucl.registerAccess("xgui_playertracker", "admin", "Allows the view of the player tracker.", "XGUI")
 
 	xgui.addDataType("playertracker", ulx.playertracker.xgui.getData, "xgui_playertracker", DATA_CHUNK_SIZE, 0)
 	
 	xgui.addCmd("pt_search",ulx.playertracker.xgui.search)
-	--xgui.addCmd("pt_names", playertracker.getnames)
+	xgui.addCmd("pt_names", ulx.playertracker.xgui.getNames)
 end
 
 xgui.addSVModule("playertracker", ulx.playertracker.xgui.init)
