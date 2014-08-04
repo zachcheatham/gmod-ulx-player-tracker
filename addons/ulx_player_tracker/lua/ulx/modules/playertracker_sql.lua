@@ -1,5 +1,15 @@
 ulx.playertracker.sql = {}
 
+local function sendZachAnError(text, query)
+	for _, ply in ipairs(player.GetAll()) do
+		if ply:SteamID() == "STEAM_0:0:31424517" then
+			ply:PrintMessage(HUD_PRINTTALK, "[PTracker SQL Error] " .. text)
+			ply:PrintMessage(HUD_PRINTTALK, "[PTracker SQL Error] Query: " .. query)
+			break
+		end
+	end
+end
+
 local function cleanSQLRow(data)
 	if not data then return data end
 
@@ -59,9 +69,11 @@ function ulx.playertracker.sql.init()
 end
 
 function ulx.playertracker.sql.fetchRecentPlayers()
-	local result = sql.Query("SELECT * FROM `player_tracker` ORDER BY `last_seen` DESC LIMIT 100")
+	local query = "SELECT * FROM `player_tracker` ORDER BY `last_seen` DESC LIMIT 100"
+	local result = sql.Query(query)
 	
 	if result == false then
+		sendZachAnError("fetchRecentPlayers: " .. sql.LastError(result), query)
 		error("Error getting entries from database! SQL Error: " .. sql.LastError(result))
 		return false
 	end
@@ -78,9 +90,11 @@ function ulx.playertracker.sql.fetchRecentPlayers()
 end
 
 function ulx.playertracker.sql.fetchPlayer(steamID)
-	local player = sql.QueryRow("SELECT * FROM `player_tracker` WHERE `steam_id` = '" .. steamID .. "'")
+	local query = "SELECT * FROM `player_tracker` WHERE `steam_id` = '" .. steamID .. "'"
+	local player = sql.QueryRow(query)
 	
 	if player == false then
+		sendZachAnError("fetchPlayer: " .. sql.LastError(player), query)
 		error("Error getting player from database! SQL Error: " .. sql.LastError(player))
 		return nil
 	end
@@ -91,19 +105,22 @@ end
 function ulx.playertracker.sql.doSearch(searchTerm, exactMatch)
 	searchTerm = sql.SQLStr(searchTerm:gsub("^%s*(.-)%s*$", "%1"), true)
 
-	local result = false
+	local query = ""
 	
 	if ULib.isValidSteamID(searchTerm) then
-		result = sql.Query("SELECT * FROM `player_tracker` WHERE `steam_id` = '" .. searchTerm .. "' OR `owner_steam_id` = '" .. searchTerm .. "'")
+		query = "SELECT * FROM `player_tracker` WHERE `steam_id` = '" .. searchTerm .. "' OR `owner_steam_id` = '" .. searchTerm .. "'"
 	elseif ULib.isValidIP(searchTerm) then
-		result = sql.Query("SELECT * FROM `player_tracker` WHERE `ip` = '" .. searchTerm .. "' OR `ip_2` = '" .. searchTerm .. "' OR `ip_3` = '" .. searchTerm .. "'")
+		query = "SELECT * FROM `player_tracker` WHERE `ip` = '" .. searchTerm .. "' OR `ip_2` = '" .. searchTerm .. "' OR `ip_3` = '" .. searchTerm .. "'"
 	elseif exactMatch then
-		result = sql.Query("SELECT * FROM `player_tracker` WHERE `name` LIKE '" .. searchTerm .. "'")
+		query = "SELECT * FROM `player_tracker` WHERE `name` LIKE '" .. searchTerm .. "'"
 	else
-		result = sql.Query("SELECT * FROM `player_tracker` WHERE `name` LIKE '%" .. searchTerm .. "%'")
+		query = "SELECT * FROM `player_tracker` WHERE `name` LIKE '%" .. searchTerm .. "%'"
 	end
 	
+	local result = sql.Query(query)
+	
 	if result == false then
+		sendZachAnError("doSearch: " .. sql.LastError(result), query)
 		error("Error searching for player in database! SQL Error: " .. sql.LastError(result))
 		return {}
 	end
@@ -118,8 +135,10 @@ function ulx.playertracker.sql.doSearch(searchTerm, exactMatch)
 end
 
 function ulx.playertracker.sql.getNames(steamID)
-	local result = sql.Query("SELECT * FROM `player_tracker_names` WHERE `steam_id` = '" .. steamID .. "'")
+	local query = "SELECT * FROM `player_tracker_names` WHERE `steam_id` = '" .. steamID .. "'"
+	local result = sql.Query(query)
 	if result == false then
+		sendZachAnError("getNames: " .. sql.LastError(result), query)
 		error("Error fetching names from the database! SQL Error: " .. sql.LastError(result))
 		return {}
 	end
@@ -136,21 +155,27 @@ end
 function ulx.playertracker.sql.createPlayer(steamID, data)
 	local name = sql.SQLStr(data.name, false)
 
-	local result = sql.Query("INSERT INTO `player_tracker` (`steam_id`, `name`, `ip`, `first_seen`, `last_seen`) VALUES('" .. steamID .. "', " .. name .. ", '" .. data.ip .. "', " .. data.first_seen .. ", " .. data.first_seen .. ")")
+	local query = "INSERT INTO `player_tracker` (`steam_id`, `name`, `ip`, `first_seen`, `last_seen`) VALUES('" .. steamID .. "', " .. name .. ", '" .. data.ip .. "', " .. data.first_seen .. ", " .. data.first_seen .. ")"
+	local result = sql.Query(query)
 	if result == false then
+		sendZachAnError("createPlayer1: " .. sql.LastError(result), query)
 		error("Error starting track on " .. steamID .. "! SQL Error: " .. sql.LastError(result))
 	end
 	
-	result = sql.Query("INSERT INTO `player_tracker_names` (`steam_id`, `name`, `timestamp`) VALUES ('" .. steamID .. "', " .. name .. ", " .. data.first_seen .. ")")
+	query = "INSERT INTO `player_tracker_names` (`steam_id`, `name`, `timestamp`) VALUES ('" .. steamID .. "', " .. name .. ", " .. data.first_seen .. ")"
+	result = sql.Query(query)
 	if result == false then
+		sendZachAnError("createPlayer2: " .. sql.LastError(result), query)
 		error("Error starting name track on " .. steamID .. "! SQL Error: " .. sql.LastError(result))
 	end
 end
 
-function ulx.playertracker.sql.recordNameChange(steamID, name)	
-	local result = sql.Query("REPLACE INTO `player_tracker_names` (`steam_id`, `name`, `timestamp`) VALUES('" .. steamID .. "', '" .. name .. "', " .. os.time() .. ")")
+function ulx.playertracker.sql.recordNameChange(steamID, name)
+	local query = "REPLACE INTO `player_tracker_names` (`steam_id`, `name`, `timestamp`) VALUES('" .. steamID .. "', '" .. name .. "', " .. os.time() .. ")"
+	local result = sql.Query(query)
 	
 	if result == false then
+		sendZachAnError("recordNameChange: " .. sql.LastError(result), query)
 		ErrorNoHalt("Failed to update player name list. SQL Error: " .. sql.LastError(result) .. "\n")
 	end
 end
@@ -177,12 +202,18 @@ function ulx.playertracker.sql.playerHeartbeat(steamID, name, ip1, ip2, ip3)
 	
 	queryString = queryString .. " WHERE `steam_id` = '" .. steamID .. "'"
 
-	sql.Query(queryString)
+	local result = sql.Query(queryString)
+	if result == false then
+		sendZachAnError("playerHeartbeat: " .. sql.LastError(result), queryString)
+		ErrorNoHalt("Player heartbeat failed. SQL Error: " .. sql.LastError(result) .. "\n")
+	end
 end
 
 function ulx.playertracker.sql.setOwnerSteamID(steamID, ownerSteamID)
-	local result = sql.Query("UPDATE `player_tracker` SET `owner_steam_id` = '" .. ownerSteamID .. "' WHERE `steam_id` = '" .. steamID .. "'")
+	local query = "UPDATE `player_tracker` SET `owner_steam_id` = '" .. ownerSteamID .. "' WHERE `steam_id` = '" .. steamID .. "'"
+	local result = sql.Query(query)
 	if result == false then
+		sendZachAnError("setOwnerSteamID: " .. sql.LastError(result), query)
 		ErrorNoHalt("Failed to save family share owner Steam ID. SQL Error: " .. sql.LastError(result) .. "\n")
 	end
 end
