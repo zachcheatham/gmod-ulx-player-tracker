@@ -189,7 +189,7 @@ function ulx.playertracker.sql.playerHeartbeat(steamID, name, ip1, ip2, ip3)
 	end
 	
 	if ip1 then
-		queryString = queryString .. ", `ip_1` = '" .. ip1 .. "'"
+		queryString = queryString .. ", `ip` = '" .. ip1 .. "'"
 	end
 	
 	if ip2 then

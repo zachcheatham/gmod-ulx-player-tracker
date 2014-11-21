@@ -21,11 +21,13 @@ function ulx.playertracker.updatePlayer(ply, steamID)
 		
 		tracked.last_seen = curTime
 	
-		if tracked.name ~= ply:Nick() then
-			ulx.fancyLog("#T last joined with the name #s", ply, tracked.name)
+		if tracked.name ~= ply:Name() then
+			if GetConVarString("gamemode") ~= "darkrp" then
+				ulx.fancyLog("#T last joined with the name #s", ply, tracked.name)
+			end
 			
 			nameChange = true
-			tracked.name = ply:Nick()
+			tracked.name = ply:Name()
 			
 			escapedName = sql.SQLStr(tracked.name, true)
 			ulx.playertracker.sql.recordNameChange(steamID, escapedName)
@@ -42,7 +44,7 @@ function ulx.playertracker.updatePlayer(ply, steamID)
 		ulx.playertracker.xgui.sendDataUpdate(steamID, tracked)
 	else
 		local data = {}
-		data.name = ply:Nick()
+		data.name = ply:Name()
 		data.ip = ip
 		data.first_seen = curTime
 		data.last_seen = curTime

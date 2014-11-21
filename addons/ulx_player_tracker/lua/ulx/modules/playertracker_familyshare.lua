@@ -4,7 +4,8 @@ function ulx.playertracker.checkBanEvasion(ply, ownerID)
 	if ULib.bans[ownerID] then
 		local ban = ULib.bans[ownerID]
 		
-		local newBanLength = math.ceil((ban.unban - os.time()) / 60)
+		local banLength = tonumber(ban.unban)
+		local newBanLength = (banLength == 0) and 0 or (math.ceil((banLength - os.time()) / 60))
 		local newBanReason = "Ban evasion attempt. (Family sharing owner " .. ownerID .. " is banned)"
 		
 		if IsValid(ply) then
