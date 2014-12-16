@@ -273,7 +273,7 @@ function xplayertracker.showBanWindow(name, steamID)
 	banpanel.val:SetWidth(200)
 
 	local globalBan
-	if ulx.MySQLBans and LocalPlayer():query("ulx gban" and not steamID) or (LocalPlayer():query("ulx gbanid") and steamID) then
+	if LocalPlayer():query("ulx gban") or LocalPlayer():query("ulx gbanid") then
 		xlib.makelabel{ x=14, y=147, label="Global Ban:", parent=xgui_banwindow }
 		globalBan = xlib.makecheckbox{x=75, y=147, parent=xgui_banwindow}
 	end
