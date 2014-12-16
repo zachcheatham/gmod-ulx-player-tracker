@@ -259,7 +259,7 @@ xgui.addModule("Players", xplayertracker, "icon16/user_green.png", "xgui_playert
 
 -- Copy pasta from xgui bans with name / steamID options
 function xplayertracker.showBanWindow(name, steamID)
-	local xgui_banwindow = xlib.makeframe{label="Ban " .. name, w=285, h=155, skin=xgui.settings.skin}
+	local xgui_banwindow = xlib.makeframe{label="Ban " .. name, w=285, h=200, skin=xgui.settings.skin}
 	xlib.makelabel{x=23, y=33, label="SteamID:", parent=xgui_banwindow}
 	xlib.makelabel{x=28, y=58, label="Reason:", parent=xgui_banwindow}
 	xlib.makelabel{x=10, y=83, label="Ban Length:", parent=xgui_banwindow}
@@ -272,6 +272,12 @@ function xplayertracker.showBanWindow(name, steamID)
 	banpanel.val:SetPos(75, 100)
 	banpanel.val:SetWidth(200)
 
+	local globalBan
+	if ulx.MySQLBans and LocalPlayer():query("ulx gban" and not steamID) or (LocalPlayer():query("ulx gbanid") and steamID) then
+		xlib.makelabel{ x=14, y=147, label="Global Ban:", parent=xgui_banwindow }
+		globalBan = xlib.makecheckbox{x=75, y=147, parent=xgui_banwindow}
+	end
+	
 	local steamIDBox = xlib.maketextbox{x=75, y=30, w=200, selectall=true, disabled=true, parent=xgui_banwindow}
 	steamIDBox:SetValue(steamID)
 	
@@ -287,9 +293,11 @@ function xplayertracker.showBanWindow(name, steamID)
 			end
 		end
 		if not isOnline then
-			RunConsoleCommand("ulx", "banid", steamIDBox:GetValue(), banpanel:GetValue(), reason:GetValue())
+			local cmd = (globalBan and globalBan:GetChecked()) and "gbanid" or "banid"
+			RunConsoleCommand("ulx", cmd, steamIDBox:GetValue(), banpanel:GetValue(), reason:GetValue())
 		else
-			RunConsoleCommand("ulx", "ban", "$" .. ULib.getUniqueIDForPlayer(isOnline), banpanel:GetValue(), reason:GetValue())
+			local cmd = (globalBan and globalBan:GetChecked()) and "gban" or "ban"
+			RunConsoleCommand("ulx", cmd, "$" .. ULib.getUniqueIDForPlayer(isOnline), banpanel:GetValue(), reason:GetValue())
 		end
 		xgui_banwindow:Remove()
 	end
