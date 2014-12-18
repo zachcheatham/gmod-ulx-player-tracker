@@ -23,7 +23,7 @@ function ulx.PlayerTracker.updatePlayer(ply, steamID)
 			playerData.last_seen = curTime
 		
 			if playerData.name ~= currentName then
-				ULib.tsay({}, string.format("%s last joined with the name %s", currentName, playerData.name))
+				ULib.tsay(_, string.format("%s last joined with the name %s", currentName, playerData.name))
 				
 				nameChange = true
 				playerData.name = currentName

@@ -84,9 +84,7 @@ function ulx.PlayerTracker.createPlayer(steamID, data)
 end
 
 function ulx.PlayerTracker.insertName(steamID, name)
-	print "INSERT NAME"
 	local queryStr = "REPLACE INTO `player_tracker_names` (`steamid`, `name`, `timestamp`) VALUES('" .. steamID .. "', '" .. name .. "', " .. os.time() .. ")"
-	print "QUERY"
 	ZCore.MySQL.query(queryStr)
 end
 
