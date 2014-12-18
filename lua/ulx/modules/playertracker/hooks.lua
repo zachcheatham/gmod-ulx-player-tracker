@@ -5,7 +5,6 @@ hook.Add("PlayerAuthed", "PlayerConnectionTracker", playerAuthed)
 
 local function onConnected(firstConnect)
 	ulx.PlayerTracker.createTables()
-
 	if firstConnect then
 		ulx.PlayerTracker.transferOldDatabase()
 	end
