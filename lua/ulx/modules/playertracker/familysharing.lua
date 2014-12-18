@@ -1,6 +1,6 @@
 local STEAM_API_KEY = "***REMOVED***" -- YOU MUST PROVIDE A STEAM API KEY IN ORDER TO TRACK FAMILY SHARING (This one is currently Zach's)
 
-function ulx.playertracker.checkBanEvasion(ply, ownerID)
+function ulx.PlayerTracker.checkBanEvasion(ply, ownerID)
 	if ULib.bans[ownerID] then
 		local ban = ULib.bans[ownerID]
 		
@@ -16,7 +16,7 @@ function ulx.playertracker.checkBanEvasion(ply, ownerID)
 	end
 end
 
-function ulx.playertracker.updateFamilyShareInfo(ply)
+function ulx.PlayerTracker.updateFamilyShareInfo(ply)
 	if not STEAM_API_KEY or string.len(STEAM_API_KEY) < 1 then
 		ErrorNoHalt("You must set STEAM_API_KEY in ulx_player_tracker/lua/ulx/modules/playertracker_familyshare.lua to track family sharing.\n")
 		return
@@ -36,12 +36,12 @@ function ulx.playertracker.updateFamilyShareInfo(ply)
 					ownerID = 0
 				end
 				
-				ulx.playertracker.sql.setOwnerSteamID(steamID, ownerID)
+				ulx.PlayerTracker.setOwnerSteamID(steamID, ownerID)
 
 				if ownerID ~= 0 then
 					local data = {owner_steam_id = ownerID}
-					ulx.playertracker.xgui.sendDataUpdate(steamID, data)
-					ulx.playertracker.checkBanEvasion(ply, ownerID)
+					ulx.PlayerTracker.xgui.updatePlayer(steamID, data)
+					ulx.PlayerTracker.checkBanEvasion(ply, ownerID)
 				end
 			else
 				ErrorNoHalt("Unable to track family sharing. Steam API returned http code " .. code .. ".\n")

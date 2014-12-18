@@ -243,6 +243,8 @@ xgui.hookEvent("playertracker", "clear", xplayertracker.clear)
 xgui.hookEvent("playertracker", "add", xplayertracker.update)
 
 function xplayertracker.searchRecievedData(id, data)
+	PrintTable(data)
+	
 	if id == xplayertracker.searchID then
 		table.Merge(xplayertracker.searchData, data)
 		xplayertracker.populate(data, true)
