@@ -7,7 +7,7 @@ local function updateExistingPlayer(localPlayerData, remotePlayerData, callback)
 		hasUpdate = true
 	end
 	
-	if localPlayerData.first_seen < remotePlayerData.first_seen then
+	if localPlayerData.first_seen < remotePlayerData.first_seen then	
 		queryStr = queryStr .. (hasUpdate and ", " or "") .. "`first_seen` = " .. ZCore.MySQL.escapeStr(localPlayerData.first_seen)
 		hasUpdate = true
 	end
@@ -111,16 +111,17 @@ local function queueComplete()
 	sql.Query("DROP TABLE `player_tracker_names`")
 	
 	ULib.tsay(_, "[PlayerTracker] Completed transfer. Refreshing map...")
-	ServerLog("[PlayerTracker] Completed transferring database. Refreshing map...\n")
+	ServerLog("[PlayerTracker] Completed transferring database.\n")
 	
-	timer.Simple(2, function()
+	--[[timer.Simple(2, function()
 		RunConsoleCommand("ulx", "map", game.GetMap())
-	end)
+	end)]]--
 end
 
 local function processNameQueue()
 	local key = table.GetFirstKey(nameQueue)
 	local tables = table.GetFirstValue(nameQueue)
+	table.remove(nameQueue, key)
 	
 	local function onCompletion()
 		local lresult = sql.Query("DELETE FROM `player_tracker_names` WHERE `steam_id` = " .. sql.SQLStr(tables[1].steam_id) .. " AND `name` = " .. sql.SQLStr(tables[1].name))
@@ -146,13 +147,12 @@ local function processNameQueue()
 	else
 		insertName(tables[1], onCompletion)
 	end
-	
-	table.remove(nameQueue, key)
 end
 
 local function processPlayerQueue()
 	local key = table.GetFirstKey(playerQueue)
 	local tables = table.GetFirstValue(playerQueue)
+	table.remove(playerQueue, key)
 	
 	local function onCompletion()
 		local lresult = sql.Query("DELETE FROM `player_tracker` WHERE `steam_id` = " .. sql.SQLStr(tables[1].steam_id))
@@ -183,8 +183,6 @@ local function processPlayerQueue()
 	else
 		insertPlayer(tables[1], onCompletion)
 	end
-	
-	table.remove(playerQueue, key)
 end
 
 local transferStarted = false
