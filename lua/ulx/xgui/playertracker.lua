@@ -140,6 +140,13 @@ xplayertracker.list.OnRowRightClick = function(self, id, line)
 	names:SetIcon("icon16/group_go.png")
 	names:SetTextInset(0,0)
 	
+	local names = menu:AddOption("Accounts shared with SteamID", function()
+		xplayertracker.search:SetValue(steamID)
+		xplayertracker.search.OnEnter()
+	end)
+	names:SetIcon("icon16/group_go.png")
+	names:SetTextInset(0,0)
+	
 	local ips = menu:AddOption("Accounts on IP", function()
 		local data = getPlayerData(steamID)
 		xplayertracker.search:SetValue(data.ip)
@@ -301,4 +308,25 @@ function xplayertracker.showBanWindow(name, steamID)
 		end
 		xgui_banwindow:Remove()
 	end
+end
+
+---------------
+-- Basic API --
+---------------
+
+-- Opens the XGUI tab and searches for the specified steamID
+function xplayertracker.trackSteamID(steamID)	
+	xgui.show("Players")
+	
+	xplayertracker.search:SetValue(steamID)
+	xplayertracker.search.OnEnter()
+end
+
+-- Opens the XGUI tab and searches for the specified steamID
+function xplayertracker.trackIP(steamID)	
+	xgui.show("Players")
+	
+	local data = getPlayerData(steamID)
+	xplayertracker.search:SetValue(data.ip)
+	xplayertracker.search.OnEnter()
 end

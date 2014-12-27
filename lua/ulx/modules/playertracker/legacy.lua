@@ -3,7 +3,7 @@ local function updateExistingPlayer(localPlayerData, remotePlayerData, callback)
 	local hasUpdate = false
 	
 	if localPlayerData.last_seen > remotePlayerData.last_seen then
-		queryStr = queryStr .. "`name` = '" .. ZCore.MySQL.escapeStr(localPlayerData.name) .. "', `last_seen` = " .. localPlayerData.last_seen
+		queryStr = queryStr .. "`name` = '" .. ZCore.MySQL.escapeStr(localPlayerData.name) .. "', `last_seen` = " .. localPlayerData.last_seen .. ", `last_server` = '" .. ZCore.MySQL.escapeStr(ZCore.Util.getServerIP()) .. "'"
 		hasUpdate = true
 	end
 	
@@ -35,7 +35,7 @@ local function insertPlayer(playerData, callback)
 		playerData.ip_3 = "NULL"
 	end
 	
-	if playerData.owner_steam_id and playerData.owner_steam_id ~= 0 then
+	if playerData.owner_steam_id then
 		playerData.owner_steam_id = "'" .. playerData.owner_steam_id .. "'"
 	else
 		playerData.owner_steam_id = "NULL"
@@ -50,6 +50,7 @@ local function insertPlayer(playerData, callback)
 				`ip`,
 				`ip_2`,
 				`ip_3`,
+				`last_server`,
 				`first_seen`,
 				`last_seen`
 			)
@@ -61,6 +62,7 @@ local function insertPlayer(playerData, callback)
 				']] .. playerData.ip .. [[',
 				]] .. playerData.ip_2 .. [[,
 				]] .. playerData.ip_3 .. [[,
+				']] .. ZCore.MySQL.escapeStr(ZCore.Util.getServerIP()) .. [[',
 				]] .. playerData.first_seen .. [[,
 				]] .. playerData.last_seen .. [[
 			)

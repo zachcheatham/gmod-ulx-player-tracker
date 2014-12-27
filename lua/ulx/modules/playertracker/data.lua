@@ -7,6 +7,7 @@ function ulx.PlayerTracker.createTables()
 			`ip` varchar(15) NOT NULL,
 			`ip_2` varchar(15) DEFAULT NULL,
 			`ip_3` varchar(15) DEFAULT NULL,
+			`last_server` varchar(22) DEFAULT NULL,
 			`first_seen` int(10) NOT NULL,
 			`last_seen` int(10) NOT NULL,
 			PRIMARY KEY (`steamid`)
@@ -26,7 +27,7 @@ function ulx.PlayerTracker.createTables()
 end
 
 function ulx.PlayerTracker.fetchRecentPlayers(callback)
-	local queryStr = "SELECT * FROM `player_tracker` ORDER BY `last_seen` DESC LIMIT 100"
+	local queryStr = "SELECT * FROM `player_tracker` WHERE `last_server` = '" .. ZCore.MySQL.escapeStr(ZCore.Util.getServerIP()) .. "' ORDER BY `last_seen` DESC LIMIT 100"
 	
 	ZCore.MySQL.query(queryStr, function(data)
 		callback(data)
@@ -90,7 +91,8 @@ end
 
 -- WARNING: name needs to be sql escaped before going into this function
 function ulx.PlayerTracker.savePlayerUpdate(steamID, name, ip1, ip2, ip3)
-	local queryStr = "UPDATE `player_tracker` SET `last_seen` = " .. os.time()
+	local serverIP = ZCore.MySQL.escapeStr(ZCore.Util.getServerIP())
+	local queryStr = "UPDATE `player_tracker` SET `last_seen` = " .. os.time() .. ", `last_server` = '" .. serverIP .. "'"
 
 	if name then
 		queryStr = queryStr .. ", `name` = '" .. name .. "'"
