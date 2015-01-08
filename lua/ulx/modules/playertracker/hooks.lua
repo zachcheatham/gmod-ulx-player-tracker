@@ -5,8 +5,8 @@ hook.Add("PlayerAuthed", "PlayerConnectionTracker", playerAuthed)
 
 local function onConnected(firstConnect)
 	ulx.PlayerTracker.createTables()
-	if firstConnect then
+	/*if firstConnect then
 		ulx.PlayerTracker.transferOldDatabase()
-	end
+	end*/
 end
 hook.Add("ZCore_MySQL_Connected", "PlayerTrackerConnected", onConnected)

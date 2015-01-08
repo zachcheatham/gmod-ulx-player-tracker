@@ -107,17 +107,17 @@ local totalNames = 0
 local completedNames = 0
 
 local function queueComplete()
-	sql.Query("DELETE FROM `player_tracker`")
-	sql.Query("DROP TABLE `player_tracker`")
-	sql.Query("DELETE FROM `player_tracker_names`")
-	sql.Query("DROP TABLE `player_tracker_names`")
+	--sql.Query("DELETE FROM `player_tracker`")
+	--sql.Query("DROP TABLE `player_tracker`")
+	--sql.Query("DELETE FROM `player_tracker_names`")
+	--sql.Query("DROP TABLE `player_tracker_names`")
 	
 	ULib.tsay(_, "[PlayerTracker] Completed transfer. Refreshing map...")
 	ServerLog("[PlayerTracker] Completed transferring database.\n")
 	
-	--[[timer.Simple(2, function()
+	timer.Simple(2, function()
 		RunConsoleCommand("ulx", "map", game.GetMap())
-	end)]]--
+	end)
 end
 
 local function processNameQueue()
@@ -213,13 +213,11 @@ local function startQueue()
 end
 
 function ulx.PlayerTracker.transferOldDatabase()
-	if sql.TableExists("player_tracker") then
-		ServerLog("[PlayerTracker] Detected old database. Preparing transfer...\n")
-		
-		local players = sql.Query("SELECT * FROM `player_tracker`")
+	if sql.TableExists("player_tracker") then	
+		local players = sql.Query("SELECT * FROM `player_tracker` LIMIT 2000")
 		totalPlayers = players and table.Count(players) or 0
 		
-		local names = sql.Query("SELECT * FROM `player_tracker_names`")
+		local names = sql.Query("SELECT * FROM `player_tracker_names` LIMIT 2000")
 		totalNames = names and table.Count(names) or 0
 		
 		if totalPlayers > 0 then
