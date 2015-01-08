@@ -9,4 +9,4 @@ local function onConnected(firstConnect)
 		ulx.PlayerTracker.transferOldDatabase()
 	end
 end
-hook.Add("ZCore_MySQL_Connected", "PlayerTracker_MySQLConnected", onConnected)
+hook.Add("ZCore_MySQL_Connected", "PlayerTrackerConnected", onConnected)
