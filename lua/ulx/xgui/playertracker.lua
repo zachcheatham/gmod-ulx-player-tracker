@@ -266,7 +266,7 @@ xgui.addModule("Players", xplayertracker, "icon16/user_green.png", "xgui_playert
 
 -- Copy pasta from xgui bans with name / steamID options
 function xplayertracker.showBanWindow(name, steamID)
-	local xgui_banwindow = xlib.makeframe{label="Ban " .. name, w=285, h=200, skin=xgui.settings.skin}
+	local xgui_banwindow = xlib.makeframe{label="Ban " .. name, w=285, h=175, skin=xgui.settings.skin}
 	xlib.makelabel{x=23, y=33, label="SteamID:", parent=xgui_banwindow}
 	xlib.makelabel{x=28, y=58, label="Reason:", parent=xgui_banwindow}
 	xlib.makelabel{x=10, y=83, label="Ban Length:", parent=xgui_banwindow}
@@ -281,17 +281,17 @@ function xplayertracker.showBanWindow(name, steamID)
 
 	local globalBan
 	if LocalPlayer():query("ulx gban") or LocalPlayer():query("ulx gbanid") then
-		xlib.makelabel{ x=14, y=147, label="Global Ban:", parent=xgui_banwindow }
-		globalBan = xlib.makecheckbox{x=75, y=147, parent=xgui_banwindow}
+		xlib.makelabel{ x=14, y=122, label="Global Ban:", parent=xgui_banwindow }
+		globalBan = xlib.makecheckbox{x=75, y=122, parent=xgui_banwindow}
 	end
 	
 	local steamIDBox = xlib.maketextbox{x=75, y=30, w=200, selectall=true, disabled=true, parent=xgui_banwindow}
 	steamIDBox:SetValue(steamID)
 	
-	xlib.makebutton{x=165, y=125, w=75, label="Cancel", parent=xgui_banwindow}.DoClick = function()
+	xlib.makebutton{x=165, y=145, w=75, label="Cancel", parent=xgui_banwindow}.DoClick = function()
 		xgui_banwindow:Remove()
 	end
-	xlib.makebutton{x=45, y=125, w=75, label="Ban!", parent=xgui_banwindow}.DoClick = function()
+	xlib.makebutton{x=45, y=145, w=75, label="Ban!", parent=xgui_banwindow}.DoClick = function()
 		local isOnline = false
 		for k, v in ipairs(player.GetAll()) do
 			if v:SteamID() == steamIDBox:GetValue() then
