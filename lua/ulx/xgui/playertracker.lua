@@ -192,7 +192,7 @@ function xplayertracker.addPlayer(steamID, player)
 		lastSeen = os.date("%x %I:%M %p", player.last_seen)
 	end
 	
-	xplayertracker.list:AddLine(player.name, ((not player.owner_steam_id or tonumber(player.owner_steam_id) == 0) and "" or "*") .. steamID, player.ip, firstSeen, lastSeen)
+	xplayertracker.list:AddLine(player.name, ((not player.owner_steamid or tonumber(player.owner_steamid) == 0) and "" or "*") .. steamID, player.ip, firstSeen, lastSeen)
 	xplayertracker.list:SortByColumn(5, true)
 end
 

@@ -65,7 +65,7 @@ function xplayertracker.showPlayerDetailsDialog(steamID, data)
 	end
 	
 	local familyShareLabel = xlib.makelabel{label="Family Sharing Owner:", x=5, y=196, parent=detailsPanel}
-	local familyShareBox = xlib.maketextbox{x=5, y=212, w=210, text=(data.owner_steam_id or "N/A"), parent=detailsPanel}
+	local familyShareBox = xlib.maketextbox{x=5, y=212, w=210, text=(data.owner_steamid or "N/A"), parent=detailsPanel}
 	familyShareBox:SetEditable(false)
 	local familyShareCopyButton = xlib.makebutton{x=220, y=212, h=20, w=40, label="Copy", parent=detailsPanel}
 	familyShareCopyButton.DoClick = function()
