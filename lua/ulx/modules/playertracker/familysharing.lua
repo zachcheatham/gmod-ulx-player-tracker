@@ -40,7 +40,7 @@ function ulx.PlayerTracker.updateFamilyShareInfo(ply)
 
 				if ownerID ~= 0 then
 					local data = {owner_steam_id = ownerID}
-					ulx.PlayerTracker.xgui.updatePlayer(steamID, data)
+					ulx.PlayerTracker.xgui.addPlayer(steamID, data)
 					ulx.PlayerTracker.checkBanEvasion(ply, ownerID)
 				end
 			else
