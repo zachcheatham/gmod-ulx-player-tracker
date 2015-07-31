@@ -51,6 +51,8 @@ function ulx.PlayerTracker.xgui.addPlayer(steamID, playerData)
 	t[steamID] = preparePlayerData(playerData)
 	local sendPlys = getReadyPlayers()
 	if #sendPlys > 0 then
+		//print "AddPlayer"
+		//PrintTable(sendPlys)	
 		xgui.addData(sendPlys, "playertracker", t)
 	end
 	
@@ -78,11 +80,12 @@ local function getRecents()
 			for _, v in ipairs(players) do
 				recentPlayers[v.steamid] = preparePlayerData(v)
 			end
-			
-			local sendPlys = getReadyPlayers()
+
+			-- This is causing dupes
+			/*local sendPlys = getReadyPlayers()
 			if #sendPlys > 0 then
 				xgui.addData(sendPlys, "playertracker", recentPlayers)
-			end
+			end*/
 		end)
 		
 		recentPlayers = {} -- Make this not false because xgui tends to call this function multiple times in a row
@@ -91,6 +94,7 @@ local function getRecents()
 		return recentPlayers
 	end
 end
+--hook.Add("ZCore_MySQL_Connected", "XGUI_GetPlayers", getRecents)
 
 local function search(ply, args)
 	local searchID = args[1]

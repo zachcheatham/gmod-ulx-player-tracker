@@ -165,7 +165,10 @@ end
 
 function xplayertracker.populate(players, fromSearch)
 	if (fromSearch or false) == xplayertracker.isSearching then
+		//print ("PT-DEBUG\tPopulate start. (" .. table.Count(players) .. ", " .. tostring(fromSearch) .. ")")
+		//if table.Count(players) == 1 then PrintTable(players) end
 		for steamID, player in pairs(players) do
+			//print ("PT-DEBUG\tPopulate " .. player.name)
 			if not fromSearch then
 				player = table.Merge(player, xgui.data.playertracker[steamID])
 			end
@@ -176,6 +179,8 @@ function xplayertracker.populate(players, fromSearch)
 end
 
 function xplayertracker.addPlayer(steamID, player)
+	//print ("PT-DEBUG\taddPlayer " .. player.name)
+
 	local theTime = os.time()
 	local firstSeen = ""
 	local lastSeen = ""
@@ -198,16 +203,24 @@ end
 
 function xplayertracker.clear()
 	if not xplayertracker.isSearching then
+		//print ("PT-DEBUG\tClear.")
+		xgui.flushQueue("playertracker_populate")
 		xplayertracker.list:Clear()
 	end
 end
 
 function xplayertracker.update(players)
 	if not xplayertracker.isSearching then
+		//print ("PT-DEBUG\tUpdate. (" .. table.Count(players) .. ")")
+
 		for steamID, player in pairs(players) do
+			//print ("PT-DEBUG\tUpdating " .. player.name)
+
 			local found = false
 			for i, line in pairs(xplayertracker.list.Lines) do
 				if string.gsub(line:GetValue(2), "*", "") == steamID then
+					//print ("\t\tUpdated!")
+
 					player = table.Merge(player, xgui.data.playertracker[steamID])
 				
 					local theTime = os.time()
