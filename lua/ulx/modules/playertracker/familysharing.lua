@@ -1,5 +1,3 @@
-local STEAM_API_KEY = "" -- YOU MUST PROVIDE A STEAM API KEY IN ORDER TO TRACK FAMILY SHARING
-
 function ulx.PlayerTracker.checkBanEvasion(ply, ownerID)
 	if ULib.bans[ownerID] then
 		local ban = ULib.bans[ownerID]

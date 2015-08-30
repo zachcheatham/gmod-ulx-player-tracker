@@ -121,14 +121,6 @@ xplayertracker.list.OnRowRightClick = function(self, id, line)
 		ban:SetTextInset(0,0)
 	end
 	
-	if LocalPlayer():query("ulx addslayid") then
-		local addslay = menu:AddOption("Add Slay", function()
-			RunConsoleCommand("ulx", "addslayid", steamID)
-		end)
-		addslay:SetIcon("icon16/time_delete.png")
-		addslay:SetTextInset(0,0)
-	end
-	
 	menu:AddSpacer()
 	
 	local names = menu:AddOption("Accounts with Name", function()

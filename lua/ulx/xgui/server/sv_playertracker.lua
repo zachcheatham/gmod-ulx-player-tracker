@@ -80,21 +80,14 @@ local function getRecents()
 			for _, v in ipairs(players) do
 				recentPlayers[v.steamid] = preparePlayerData(v)
 			end
-
-			-- This is causing dupes
-			/*local sendPlys = getReadyPlayers()
-			if #sendPlys > 0 then
-				xgui.addData(sendPlys, "playertracker", recentPlayers)
-			end*/
 		end)
 		
-		recentPlayers = {} -- Make this not false because xgui tends to call this function multiple times in a row
+		recentPlayers = {}
 		return {}
 	else
 		return recentPlayers
 	end
 end
---hook.Add("ZCore_MySQL_Connected", "XGUI_GetPlayers", getRecents)
 
 local function search(ply, args)
 	local searchID = args[1]
