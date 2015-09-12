@@ -15,14 +15,13 @@ function ulx.PlayerTracker.checkBanEvasion(ply, ownerID)
 end
 
 function ulx.PlayerTracker.updateFamilyShareInfo(ply)
-	if not STEAM_API_KEY or string.len(STEAM_API_KEY) < 1 then
-		ErrorNoHalt("You must set STEAM_API_KEY in ulx_player_tracker/lua/ulx/modules/playertracker_familyshare.lua to track family sharing.\n")
+	if not ulx.PlayerTracker.config.steamapikey or string.len(ulx.PlayerTracker.config.steamapikey) < 1 then
 		return
 	end
 	
 	local steamID = ply:SteamID()
 	
-	http.Fetch("http://api.steampowered.com/IPlayerService/IsPlayingSharedGame/v0001/?key=" .. STEAM_API_KEY .. "&steamid=" .. util.SteamIDTo64(steamID) .. "&appid_playing=4000&format=json",
+	http.Fetch("http://api.steampowered.com/IPlayerService/IsPlayingSharedGame/v0001/?key=" .. ulx.PlayerTracker.config.steamapikey .. "&steamid=" .. util.SteamIDTo64(steamID) .. "&appid_playing=4000&format=json",
 		function(body, len, headers, code)
 			if code == 200 then
 				local response = util.JSONToTable(body)
