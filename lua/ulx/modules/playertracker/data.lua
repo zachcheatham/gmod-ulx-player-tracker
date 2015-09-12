@@ -13,7 +13,7 @@ function ulx.PlayerTracker.createTables()
 			PRIMARY KEY (`steamid`)
 		)
 	]]
-	ZCore.MySQL.query(queryStr)
+	ulx.PlayerTracker.sql.query(queryStr)
 	
 	queryStr = [[
 		CREATE TABLE IF NOT EXISTS `player_tracker_names` (
@@ -23,13 +23,13 @@ function ulx.PlayerTracker.createTables()
 			PRIMARY KEY (`steamid`,`name`)
 		)
 	]]
-	ZCore.MySQL.query(queryStr)
+	ulx.PlayerTracker.sql.query(queryStr)
 end
 
 function ulx.PlayerTracker.fetchRecentPlayers(callback)
-	local queryStr = "SELECT * FROM `player_tracker` WHERE `last_server` = '" .. ZCore.MySQL.escapeStr(ZCore.Util.getServerIP()) .. "' ORDER BY `last_seen` DESC LIMIT 100"
+	local queryStr = "SELECT * FROM `player_tracker` WHERE `last_server` = '" .. ulx.PlayerTracker.sql.escapeStr(ulx.PlayerTracker.Util.getServerIP()) .. "' ORDER BY `last_seen` DESC LIMIT 100"
 	
-	ZCore.MySQL.query(queryStr, function(data)
+	ulx.PlayerTracker.sql.query(queryStr, function(data)
 		callback(data)
 	end)
 end
@@ -37,7 +37,7 @@ end
 function ulx.PlayerTracker.fetchPlayer(steamID, callback)
 	local queryStr = "SELECT * FROM `player_tracker` WHERE `steamid` = '" .. steamID .. "'"
 	
-	ZCore.MySQL.queryRow(queryStr, function(data)
+	ulx.PlayerTracker.sql.queryRow(queryStr, function(data)
 		callback(data)
 	end)
 end
@@ -57,7 +57,7 @@ function ulx.PlayerTracker.search(searchTerm, exactMatch, callback)
 		queryStr = "SELECT * FROM `player_tracker` WHERE `name` LIKE '%" .. searchTerm .. "%'"
 	end
 	
-	ZCore.MySQL.query(queryStr, function(data)	
+	ulx.PlayerTracker.sql.query(queryStr, function(data)	
 		callback(data)
 	end)
 end
@@ -65,10 +65,10 @@ end
 function ulx.PlayerTracker.fetchNames(steamID, callback)
 	local queryStr = "SELECT * FROM `player_tracker_names` WHERE `steamid` = '" .. steamID .. "'"
 	
-	ZCore.MySQL.query(queryStr, function(data)
+	ulx.PlayerTracker.sql.query(queryStr, function(data)
 		local result = {}
 		for _, v in ipairs(data) do
-			table.insert(result, ZCore.MySQL.cleanSQLRow(v))
+			table.insert(result, ulx.PlayerTracker.sql.cleanSQLRow(v))
 		end
 		callback(result)
 	end)
@@ -78,20 +78,20 @@ function ulx.PlayerTracker.createPlayer(steamID, data)
 	local name = sql.SQLStr(data.name, false)
 
 	local queryStr = "INSERT INTO `player_tracker` (`steamid`, `name`, `ip`, `first_seen`, `last_seen`) VALUES('" .. steamID .. "', " .. name .. ", '" .. data.ip .. "', " .. data.first_seen .. ", " .. data.first_seen .. ")"
-	ZCore.MySQL.query(queryStr)
+	ulx.PlayerTracker.sql.query(queryStr)
 	
 	queryStr = "INSERT INTO `player_tracker_names` (`steamid`, `name`, `timestamp`) VALUES ('" .. steamID .. "', " .. name .. ", " .. data.first_seen .. ")"
-	ZCore.MySQL.query(queryStr)
+	ulx.PlayerTracker.sql.query(queryStr)
 end
 
 function ulx.PlayerTracker.insertName(steamID, name)
 	local queryStr = "REPLACE INTO `player_tracker_names` (`steamid`, `name`, `timestamp`) VALUES('" .. steamID .. "', '" .. name .. "', " .. os.time() .. ")"
-	ZCore.MySQL.query(queryStr)
+	ulx.PlayerTracker.sql.query(queryStr)
 end
 
 -- WARNING: name needs to be sql escaped before going into this function
 function ulx.PlayerTracker.savePlayerUpdate(steamID, name, ip1, ip2, ip3)
-	local serverIP = ZCore.MySQL.escapeStr(ZCore.Util.getServerIP())
+	local serverIP = ulx.PlayerTracker.sql.escapeStr(ulx.PlayerTracker.Util.getServerIP())
 	local queryStr = "UPDATE `player_tracker` SET `last_seen` = " .. os.time() .. ", `last_server` = '" .. serverIP .. "'"
 
 	if name then
@@ -112,10 +112,10 @@ function ulx.PlayerTracker.savePlayerUpdate(steamID, name, ip1, ip2, ip3)
 	
 	queryStr = queryStr .. " WHERE `steamid` = '" .. steamID .. "'"
 
-	ZCore.MySQL.query(queryStr)
+	ulx.PlayerTracker.sql.query(queryStr)
 end
 
 function ulx.PlayerTracker.setOwnerSteamID(steamID, ownerSteamID)
 	local queryStr = "UPDATE `player_tracker` SET `owner_steamid` = '" .. ownerSteamID .. "' WHERE `steamid` = '" .. steamID .. "'"
-	ZCore.MySQL.query(queryStr)
+	ulx.PlayerTracker.sql.query(queryStr)
 end

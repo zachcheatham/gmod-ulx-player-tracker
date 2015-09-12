@@ -8,7 +8,7 @@ include("playertracker/familysharing.lua")
 function ulx.PlayerTracker.updatePlayer(ply, steamID)
 	if not IsValid(ply) then return end
 
-	local ip = ZCore.Util.removePortFromIP(ply:IPAddress())
+	local ip = removePortFromIP(ply:IPAddress())
 	local curTime = os.time()
 
 	ulx.PlayerTracker.fetchPlayer(steamID, function(playerData)
@@ -28,7 +28,7 @@ function ulx.PlayerTracker.updatePlayer(ply, steamID)
 				nameChange = true
 				playerData.name = currentName
 				
-				escapedName = ZCore.MySQL.escapeStr(playerData.name, true)
+				escapedName = ulx.PlayerTracker.sql.escapeStr(playerData.name, true)
 				ulx.PlayerTracker.insertName(steamID, escapedName)
 			end
 		
@@ -60,3 +60,9 @@ function ulx.PlayerTracker.updatePlayer(ply, steamID)
 	end)
 end
 hook.Add("PlayerAuthed", "PlayerConnectionTracker", updatePlayer)
+
+local function removePortFromIP(address)
+	local i = string.find(address, ":")
+	if not i then return address end
+	return string.sub(address, 1, i-1)
+end
