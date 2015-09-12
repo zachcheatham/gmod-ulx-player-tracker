@@ -11,7 +11,7 @@ local function connect()
 	if not mysqloo then Error("[PlayerTracker] MySQLOO isn't installed properly. Unable to use MySQL functions.\n") end
 	
 	ServerLog("[PlayerTracker] Connecting to MySQL...\n")
-	database = mysqloo.connect(ZCore.Config.SQL.hostname, ZCore.Config.SQL.username, ZCore.Config.SQL.password, ZCore.Config.SQL.database)
+	database = mysqloo.connect(ulx.playertracker.config.mysql.host, ulx.playertracker.config.mysql.user, ulx.playertracker.config.mysql.pass, ulx.playertracker.config.mysql.db)
 
 	if timer.Exists("ptracker_sql_connection_state") then timer.Destroy("ptracker_sql_connection_state") end
 	
