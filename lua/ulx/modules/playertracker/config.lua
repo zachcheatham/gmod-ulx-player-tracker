@@ -24,4 +24,4 @@ config.fsevadeban = true
 -- EDIT ABOVE THIS!
 --
 
-ulx.playertracker.config = config
+ulx.PlayerTracker.config = config

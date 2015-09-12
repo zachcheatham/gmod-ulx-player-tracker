@@ -1,6 +1,6 @@
 require("mysqloo")
 
-ulx.playertracker.sql = {}
+ulx.PlayerTracker.sql = {}
 
 local database = nil
 local connected = false
@@ -11,7 +11,7 @@ local function connect()
 	if not mysqloo then Error("[PlayerTracker] MySQLOO isn't installed properly. Unable to use MySQL functions.\n") end
 	
 	ServerLog("[PlayerTracker] Connecting to MySQL...\n")
-	database = mysqloo.connect(ulx.playertracker.config.mysql.host, ulx.playertracker.config.mysql.user, ulx.playertracker.config.mysql.pass, ulx.playertracker.config.mysql.db)
+	database = mysqloo.connect(ulx.PlayerTracker.config.mysql.host, ulx.PlayerTracker.config.mysql.user, ulx.PlayerTracker.config.mysql.pass, ulx.PlayerTracker.config.mysql.db)
 
 	if timer.Exists("ptracker_sql_connection_state") then timer.Destroy("ptracker_sql_connection_state") end
 	
@@ -28,7 +28,7 @@ local function connect()
 		ServerLog("[PlayerTracker] Connected to MySQL.\n")
 
 		for _, query in ipairs(queryCache) do
-			ulx.playertracker.sql.query(query[1], query[2])
+			ulx.PlayerTracker.sql.query(query[1], query[2])
 		end
 		table.Empty(queryCache)
 		
@@ -48,7 +48,7 @@ local function connect()
 end
 connect() 
 
-function ulx.playertracker.sql.query(sql, callback)
+function ulx.PlayerTracker.sql.query(sql, callback)
 	if not connected then
 		table.insert(queryCache, {sql, callback})
 	else
@@ -71,33 +71,33 @@ function ulx.playertracker.sql.query(sql, callback)
 	end
 end
 
-function ulx.playertracker.sql.queryRow(sql, callback)
-	ulx.playertracker.sql.query(sql, function(data)
+function ulx.PlayerTracker.sql.queryRow(sql, callback)
+	ulx.PlayerTracker.sql.query(sql, function(data)
 		if table.Count(data) > 0 then
-			callback(ulx.playertracker.sql.cleanSQLRow(data[1]))
+			callback(ulx.PlayerTracker.sql.cleanSQLRow(data[1]))
 		else
 			callback(false)
 		end
 	end)
 end
 
-function ulx.playertracker.sql.escapeStr(str)
+function ulx.PlayerTracker.sql.escapeStr(str)
 	return database:escape(tostring(str))
 end
 
-function ulx.playertracker.sql.cleanSQLArray(data)
+function ulx.PlayerTracker.sql.cleanSQLArray(data)
 	if not type(data) == "table" then return data end
 	
 	local newData = {}
 	
 	for k, v in pairs(data) do
-		newData[k] = ulx.playertracker.sql.cleanSQLRow(v)
+		newData[k] = ulx.PlayerTracker.sql.cleanSQLRow(v)
 	end
 	
 	return newData
 end
 
-function ulx.playertracker.sql.cleanSQLRow(data)
+function ulx.PlayerTracker.sql.cleanSQLRow(data)
 	if not data then return data end
 
 	local newData = table.Copy(data)
