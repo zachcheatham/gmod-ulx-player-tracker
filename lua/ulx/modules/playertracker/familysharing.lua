@@ -38,7 +38,10 @@ function ulx.PlayerTracker.updateFamilyShareInfo(ply)
 				if ownerID ~= 0 then
 					local data = {owner_steam_id = ownerID}
 					ulx.PlayerTracker.xgui.addPlayer(steamID, data)
-					ulx.PlayerTracker.checkBanEvasion(ply, ownerID)
+
+					if ulx.PlayerTracker.config.fsevadeban then
+						ulx.PlayerTracker.checkBanEvasion(ply, ownerID)
+					end
 				end
 			else
 				ErrorNoHalt("Unable to track family sharing. Steam API returned http code " .. code .. ".\n")
