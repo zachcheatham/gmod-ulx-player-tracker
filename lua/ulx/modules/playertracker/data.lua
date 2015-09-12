@@ -1,3 +1,18 @@
+local function getServerIP()
+	local hostip = tonumber(GetConVarString("hostip"))
+		
+	local ip = {}
+	ip[1] = bit.rshift(bit.band( hostip, 0xFF000000 ), 24)
+	ip[2] = bit.rshift(bit.band( hostip, 0x00FF0000 ), 16)
+	ip[3] = bit.rshift(bit.band( hostip, 0x0000FF00 ), 8)
+	ip[4] = bit.band(hostip, 0x000000FF)
+	
+	local ipaddress = table.concat(ip, ".")
+	local hostport = tonumber(GetConVarString("hostport"))
+	
+	return (ipaddress .. ":" .. hostport)
+end
+
 function ulx.PlayerTracker.createTables()
 	local queryStr = [[
 		CREATE TABLE IF NOT EXISTS `player_tracker` (
@@ -27,7 +42,7 @@ function ulx.PlayerTracker.createTables()
 end
 
 function ulx.PlayerTracker.fetchRecentPlayers(callback)
-	local queryStr = "SELECT * FROM `player_tracker` WHERE `last_server` = '" .. ulx.PlayerTracker.sql.escapeStr(ulx.PlayerTracker.Util.getServerIP()) .. "' ORDER BY `last_seen` DESC LIMIT 100"
+	local queryStr = "SELECT * FROM `player_tracker` WHERE `last_server` = '" .. ulx.PlayerTracker.sql.escapeStr(getServerIP()) .. "' ORDER BY `last_seen` DESC LIMIT 100"
 	
 	ulx.PlayerTracker.sql.query(queryStr, function(data)
 		callback(data)
@@ -118,19 +133,4 @@ end
 function ulx.PlayerTracker.setOwnerSteamID(steamID, ownerSteamID)
 	local queryStr = "UPDATE `player_tracker` SET `owner_steamid` = '" .. ownerSteamID .. "' WHERE `steamid` = '" .. steamID .. "'"
 	ulx.PlayerTracker.sql.query(queryStr)
-end
-
-local function getServerIP()
-	local hostip = tonumber(GetConVarString("hostip"))
-		
-	local ip = {}
-	ip[1] = bit.rshift(bit.band( hostip, 0xFF000000 ), 24)
-	ip[2] = bit.rshift(bit.band( hostip, 0x00FF0000 ), 16)
-	ip[3] = bit.rshift(bit.band( hostip, 0x0000FF00 ), 8)
-	ip[4] = bit.band(hostip, 0x000000FF)
-	
-	local ipaddress = table.concat(ip, ".")
-	local hostport = tonumber(GetConVarString("hostport"))
-	
-	return (ipaddress .. ":" .. hostport)
 end

@@ -5,6 +5,12 @@ include("playertracker/mysql.lua")
 include("playertracker/data.lua")
 include("playertracker/familysharing.lua")
 
+local function removePortFromIP(address)
+	local i = string.find(address, ":")
+	if not i then return address end
+	return string.sub(address, 1, i-1)
+end
+
 function ulx.PlayerTracker.updatePlayer(ply, steamID)
 	if not IsValid(ply) then return end
 
@@ -23,7 +29,9 @@ function ulx.PlayerTracker.updatePlayer(ply, steamID)
 			playerData.last_seen = curTime
 		
 			if playerData.name ~= currentName then
-				ULib.tsay(_, string.format("%s last joined with the name %s", currentName, playerData.name))
+				if ulx.PlayerTracker.config.namechangealert then
+					ULib.tsay(_, string.format("%s last joined with the name %s", currentName, playerData.name))
+				end
 				
 				nameChange = true
 				playerData.name = currentName
@@ -60,9 +68,3 @@ function ulx.PlayerTracker.updatePlayer(ply, steamID)
 	end)
 end
 hook.Add("PlayerAuthed", "PlayerConnectionTracker", updatePlayer)
-
-local function removePortFromIP(address)
-	local i = string.find(address, ":")
-	if not i then return address end
-	return string.sub(address, 1, i-1)
-end
