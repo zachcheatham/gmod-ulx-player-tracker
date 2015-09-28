@@ -67,4 +67,4 @@ function ulx.PlayerTracker.updatePlayer(ply, steamID)
 		end
 	end)
 end
-hook.Add("PlayerAuthed", "PlayerConnectionTracker", updatePlayer)
+hook.Add("PlayerAuthed", "PlayerConnectionTracker", ulx.PlayerTracker.updatePlayer)
