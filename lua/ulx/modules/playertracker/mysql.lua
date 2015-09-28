@@ -46,7 +46,7 @@ local function connect()
 	
 	database:connect()
 end
-connect() 
+hook.Add("Initialize", "PlayerTracker_SQLInit", connect)
 
 function ulx.PlayerTracker.sql.query(sql, callback)
 	if not connected then
