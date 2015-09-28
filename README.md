@@ -1,6 +1,6 @@
 ULX Player Tracker
 ==============
-An easy-to-use player tracking system for ULX.
+An easy to use player tracking system for ULX.
 
 ### Features ###
 * Stores every name a player has ever used.
@@ -18,7 +18,7 @@ An easy-to-use player tracking system for ULX.
 * Easily find players' alt-accounts.
 * Find players' previous aliases further back than Steam can.
 * Check if a player is using Family Sharing.
-* Quickly ban disconnected players using the recents tab.
+* Quickly ban disconnected players using the recent players list.
 * Using the MySQL database on a website to associate Steam IDs with IP addresses.
 
 ### Requirements ###
