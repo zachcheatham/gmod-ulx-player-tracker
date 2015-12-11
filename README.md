@@ -11,8 +11,8 @@ An easy to use player tracking system for ULX.
 * Backed by MySQL to store and keep information from multiple servers in sync.
 * XGUI tab for viewing recent players and searching for players.
 * Admins can search the entire database of players using a Steam ID, IP Address, or even part of a name.
-* Can optionally automatically ban players who attempt to ban evade by making a Family Sharing account.
-* Can optionally display a chat notification when a player joins with a new name.
+* Can (optionally) automatically ban players who attempt to ban evade by making a Family Sharing account.
+* Can (optionally) display a chat notification when a player joins with a new name.
 
 ### Example Uses ###
 * Easily find players' alt-accounts.
