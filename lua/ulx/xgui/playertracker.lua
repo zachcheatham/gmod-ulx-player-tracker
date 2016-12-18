@@ -212,7 +212,6 @@ end
 function xplayertracker.update(players)
 	if not xplayertracker.isSearching then
 		//print ("PT-DEBUG\tUpdate. (" .. table.Count(players) .. ")")
-
 		for steamID, player in pairs(players) do
 			//print ("PT-DEBUG\tUpdating " .. player.name)
 

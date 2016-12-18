@@ -9,12 +9,14 @@ local recentPlayers = false
 local function getReadyPlayers()
 	local players = {}
 
-	for _, v in pairs(player.GetAll()) do
-		if xgui.readyPlayers[v:UniqueID()] and v:query("xgui_playertracker") then
-			table.insert(players , v)
+	if player.GetAll() then
+		for _, v in pairs(player.GetAll()) do
+			if xgui.readyPlayers[v:UniqueID()] and v:query("xgui_playertracker") then
+				table.insert(players , v)
+			end
 		end
 	end
-	
+
 	return players
 end
 
