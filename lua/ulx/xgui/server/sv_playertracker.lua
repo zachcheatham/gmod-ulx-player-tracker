@@ -28,7 +28,7 @@ local function preparePlayerData(data)
 	if newData.owner_steamid == 0 then
 		newData.owner_steamid = nil
 	end
-	
+
 	return newData
 end
 
@@ -36,14 +36,14 @@ end
 local function removeOldestRecent()
 	local oldestSteamID
 	local oldestTimestamp
-	
+
 	for steamID, playerData in pairs(recentPlayers) do
 		if not oldestTimestamp or playerData.last_seen < oldestTimestamp then
 			oldestSteamID = steamID
 			oldestTimestamp = playerData.last_seen
 		end
 	end
-	
+
 	readyPlayers[oldestSteamID] = nil
 end
 
@@ -53,21 +53,19 @@ function ulx.PlayerTracker.xgui.addPlayer(steamID, playerData)
 	t[steamID] = preparePlayerData(playerData)
 	local sendPlys = getReadyPlayers()
 	if #sendPlys > 0 then
-		//print "AddPlayer"
-		//PrintTable(sendPlys)	
 		xgui.addData(sendPlys, "playertracker", t)
 	end
-	
+
 	-- Insert into local recents table
 	if recentPlayers and not recentPlayers[steamID] then
 		recentPlayers[steamID] = t[steamID]
-		
+
 		local recentTableOverflow = table.Count(readPlayers) - RECENT_PLAYERS_SIZE
-		
+
 		if recentTableOverflow > 1 then
 			ServerLog("[PlayerTracker] Warning: Recent players table has an overflow greater than one. This is a sign of a programming error!")
 		end
-		
+
 		while recentTableOverflow > 0 do
 			removeOldestRecent()
 			recentTableOverflow = recentTableOverflow - 1
@@ -89,7 +87,7 @@ local function getRecents()
 				xgui.addData(sendPlys, "playertracker", recentPlayers)
 			end*/
 		end)
-		
+
 		recentPlayers = {} -- Make this not false because xgui tends to call this function multiple times in a row
 		return {}
 	else
@@ -101,7 +99,7 @@ end
 local function search(ply, args)
 	local searchID = args[1]
 	table.remove(args, 1)
-	
+
 	local exactMatch = args[1] == "1"
 	table.remove(args, 1)
 
@@ -109,21 +107,21 @@ local function search(ply, args)
 	for _, v in ipairs(args) do
 		searchTerm = searchTerm .. " " .. v
 	end
-	
+
 	ulx.PlayerTracker.search(searchTerm, exactMatch, function(data)
 		local chunk = {}
 		for _, v in ipairs(data) do
 			chunk[v.steamid] = preparePlayerData(v)
-			
+
 			if table.Count(chunk) >= DATA_CHUNK_SIZE then
-				ULib.queueFunctionCall(ULib.clientRPC, ply, "xplayertracker.searchRecievedData", searchID, chunk)
+				ULib.queueFunctionCall(ULib.clientRPC, ply, "ulx.PlayerTracker.xgui.searchRecievedData", searchID, chunk)
 				chunk = {}
 			end
 		end
-		
-		ULib.queueFunctionCall(ULib.clientRPC, ply, "xplayertracker.searchRecievedData", searchID, chunk)
-		ULib.queueFunctionCall(ULib.clientRPC, ply, "xplayertracker.searchCompleted", searchID)
-	end)	
+
+		ULib.queueFunctionCall(ULib.clientRPC, ply, "ulx.PlayerTracker.xgui.searchRecievedData", searchID, chunk)
+		ULib.queueFunctionCall(ULib.clientRPC, ply, "ulx.PlayerTracker.xgui.searchCompleted", searchID)
+	end)
 end
 
 local function getNames(ply, args)
@@ -131,19 +129,19 @@ local function getNames(ply, args)
 	for _, v in ipairs(args) do
 		steamID = steamID .. v
 	end
-	
+
 	ulx.PlayerTracker.fetchNames(steamID, function(names)
 		local chunk = {}
 		for _, v in ipairs(names) do
 			table.insert(chunk, v)
-			
+
 			if table.Count(chunk) >= DATA_NAMES_CHUNK_SIZE then
-				ULib.queueFunctionCall(ULib.clientRPC, ply, "xplayertracker.recievedNames", steamID, chunk)
+				ULib.queueFunctionCall(ULib.clientRPC, ply, "ulx.PlayerTracker.xgui.recievedNames", steamID, chunk)
 				chunk = {}
 			end
 		end
-		
-		ULib.queueFunctionCall(ULib.clientRPC, ply, "xplayertracker.recievedNames", steamID, chunk)
+
+		ULib.queueFunctionCall(ULib.clientRPC, ply, "ulx.PlayerTracker.xgui.recievedNames", steamID, chunk)
 	end)
 end
 
@@ -151,7 +149,7 @@ local function init()
 	ULib.ucl.registerAccess("xgui_playertracker", "admin", "Allows admins to view player tracker.", "XGUI")
 
 	xgui.addDataType("playertracker", getRecents, "xgui_playertracker", DATA_CHUNK_SIZE, 0)
-	
+
 	xgui.addCmd("pt_search", search)
 	xgui.addCmd("pt_names", getNames)
 end

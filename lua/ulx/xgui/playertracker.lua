@@ -1,3 +1,10 @@
+if not ulx.PlayerTracker then
+    ulx.PlayerTracker = {}
+    ulx.PlayerTracker.xgui = {}
+elseif not ulx.PlayerTracker.xgui then
+    ulx.PlayerTracker.xgui = {}
+end
+
 xgui.prepareDataType("playertracker")
 
 xplayertracker = xlib.makepanel{parent=xgui.null}
@@ -11,12 +18,12 @@ xplayertracker.search.OnEnter = function()
 		if string.len(xplayertracker.search:GetValue()) > 3 or xplayertracker.exactMatch:GetChecked() then
 			xplayertracker.list:Clear()
 			xgui.flushQueue("playertracker_populate")
-			
+
 			xplayertracker.isSearching = true
 			xplayertracker.searchID = tostring(os.time())
-			
+
 			xplayertracker.loading:SetVisible(true)
-			
+
 			RunConsoleCommand("_xgui", "pt_search", xplayertracker.searchID, (xplayertracker.exactMatch:GetChecked() and "1" or "0"), xplayertracker.search:GetValue())
 		else
 			Derma_Query("That search would be too broad!", "Expensive Search Term", "Okay")
@@ -24,11 +31,11 @@ xplayertracker.search.OnEnter = function()
 	elseif xplayertracker.isSearching then
 		xplayertracker.list:Clear()
 		xgui.flushQueue("playertracker_populate")
-	
+
 		xplayertracker.isSearching = false
 		xplayertracker.searchID = ""
 		xplayertracker.searchData = {}
-		
+
 		xplayertracker.populate(xgui.data.playertracker)
 	end
 end
@@ -45,39 +52,39 @@ xplayertracker.list:AddColumn("IP Address")
 xplayertracker.list:AddColumn("First Seen")
 xplayertracker.list:AddColumn("Last Seen")
 xplayertracker.list.SortByColumn = function(self, columnID, desc)
-	table.Copy(self.Sorted, self.Lines)	
+	table.Copy(self.Sorted, self.Lines)
 	if columnID > 3 then
-		table.sort(self.Sorted, function(a, b) 
+		table.sort(self.Sorted, function(a, b)
 			local dataTable = {}
 			local timeKey = ""
-			
+
 			if xplayertracker.isSearching then
 				dataTable = xplayertracker.searchData
 			else
 				dataTable = xgui.data.playertracker
 			end
-			
+
 			if columnID == 4 then
 				timeKey = "first_seen"
 			else
 				timeKey = "last_seen"
 			end
-			
+
 			if (desc) then
 				a, b = b, a
 			end
-			
+
 			return tonumber(dataTable[string.gsub(a:GetColumnText(2), "*", "")][timeKey]) < tonumber(dataTable[string.gsub(b:GetColumnText(2), "*", "")][timeKey])
 		end)
 	else
-		table.sort(self.Sorted, function(a, b) 
+		table.sort(self.Sorted, function(a, b)
 			if (desc) then
 				a, b = b, a
 			end
 			return a:GetColumnText(columnID) < b:GetColumnText(columnID)
 		end)
 	end
-	
+
 	self:SetDirty(true)
 	self:InvalidateLayout()
 end
@@ -89,29 +96,29 @@ local function getPlayerData(steamID)
 	else
 		data = xgui.data.playertracker[steamID]
 	end
-	
+
 	return data
 end
 
 xplayertracker.list.OnRowRightClick = function(self, id, line)
 	local steamID = string.gsub(line:GetValue(2), "*", "")
 	local menu = DermaMenu()
-	
+
 	local details = menu:AddOption("Details...", function()
 		xplayertracker.showPlayerDetailsDialog(steamID, getPlayerData(steamID))
 	end)
 	details:SetIcon("icon16/information.png")
 	details:SetTextInset(0,0)
-	
+
 	menu:AddSpacer()
-	
+
 	local profile = menu:AddOption("View Profile", function()
 		local profileID = util.SteamIDTo64(steamID)
 		gui.OpenURL("http://steamcommunity.com/profiles/" .. profileID)
 	end)
 	profile:SetIcon("icon16/application_go.png")
 	profile:SetTextInset(0,0)
-	
+
 	if LocalPlayer():query("ulx banid") then
 		local ban = menu:AddOption("Ban", function()
 			local data = getPlayerData(steamID)
@@ -120,7 +127,7 @@ xplayertracker.list.OnRowRightClick = function(self, id, line)
 		ban:SetIcon("icon16/delete.png")
 		ban:SetTextInset(0,0)
 	end
-	
+
 	if LocalPlayer():query("ulx addslayid") then
 		local addslay = menu:AddOption("Add Slay", function()
 			RunConsoleCommand("ulx", "addslayid", steamID)
@@ -128,9 +135,9 @@ xplayertracker.list.OnRowRightClick = function(self, id, line)
 		addslay:SetIcon("icon16/time_delete.png")
 		addslay:SetTextInset(0,0)
 	end
-	
+
 	menu:AddSpacer()
-	
+
 	local names = menu:AddOption("Accounts with Name", function()
 		local data = getPlayerData(steamID)
 		xplayertracker.search:SetValue(data.name)
@@ -139,14 +146,14 @@ xplayertracker.list.OnRowRightClick = function(self, id, line)
 	end)
 	names:SetIcon("icon16/group_go.png")
 	names:SetTextInset(0,0)
-	
+
 	local names = menu:AddOption("Accounts shared with SteamID", function()
 		xplayertracker.search:SetValue(steamID)
 		xplayertracker.search.OnEnter()
 	end)
 	names:SetIcon("icon16/group_go.png")
 	names:SetTextInset(0,0)
-	
+
 	local ips = menu:AddOption("Accounts on IP", function()
 		local data = getPlayerData(steamID)
 		xplayertracker.search:SetValue(data.ip)
@@ -154,7 +161,7 @@ xplayertracker.list.OnRowRightClick = function(self, id, line)
 	end)
 	ips:SetIcon("icon16/world_go.png")
 	ips:SetTextInset(0,0)
-	
+
 	menu:Open()
 end
 
@@ -165,45 +172,39 @@ end
 
 function xplayertracker.populate(players, fromSearch)
 	if (fromSearch or false) == xplayertracker.isSearching then
-		//print ("PT-DEBUG\tPopulate start. (" .. table.Count(players) .. ", " .. tostring(fromSearch) .. ")")
-		//if table.Count(players) == 1 then PrintTable(players) end
 		for steamID, player in pairs(players) do
-			//print ("PT-DEBUG\tPopulate " .. player.name)
 			if not fromSearch then
 				player = table.Merge(player, xgui.data.playertracker[steamID])
 			end
-		
+
 			xgui.queueFunctionCall(xplayertracker.addPlayer, "playertracker_populate", steamID, player)
 		end
 	end
 end
 
 function xplayertracker.addPlayer(steamID, player)
-	//print ("PT-DEBUG\taddPlayer " .. player.name)
-
 	local theTime = os.time()
 	local firstSeen = ""
 	local lastSeen = ""
-	
+
 	if (theTime - player.first_seen) < 86400 then
 		firstSeen = os.date("%I:%M %p", player.first_seen)
 	else
 		firstSeen = os.date("%x %I:%M %p", player.first_seen)
 	end
-	
+
 	if (theTime - player.last_seen) < 86400 then
 		lastSeen = os.date("%I:%M %p", player.last_seen)
 	else
 		lastSeen = os.date("%x %I:%M %p", player.last_seen)
 	end
-	
+
 	xplayertracker.list:AddLine(player.name, ((not player.owner_steamid or tonumber(player.owner_steamid) == 0) and "" or "*") .. steamID, player.ip, firstSeen, lastSeen)
 	xplayertracker.list:SortByColumn(5, true)
 end
 
 function xplayertracker.clear()
 	if not xplayertracker.isSearching then
-		//print ("PT-DEBUG\tClear.")
 		xgui.flushQueue("playertracker_populate")
 		xplayertracker.list:Clear()
 	end
@@ -211,43 +212,38 @@ end
 
 function xplayertracker.update(players)
 	if not xplayertracker.isSearching then
-		//print ("PT-DEBUG\tUpdate. (" .. table.Count(players) .. ")")
 		for steamID, player in pairs(players) do
-			//print ("PT-DEBUG\tUpdating " .. player.name)
-
 			local found = false
 			for i, line in pairs(xplayertracker.list.Lines) do
 				if string.gsub(line:GetValue(2), "*", "") == steamID then
-					//print ("\t\tUpdated!")
-
 					player = table.Merge(player, xgui.data.playertracker[steamID])
-				
+
 					local theTime = os.time()
 					local firstSeen = ""
 					local lastSeen = ""
-					
+
 					if (theTime - player.first_seen) < 86400 then
 						firstSeen = os.date("%I:%M %p", player.first_seen)
 					else
 						firstSeen = os.date("%x %I:%M %p", player.first_seen)
 					end
-					
+
 					if (theTime - player.last_seen) < 86400 then
 						lastSeen = os.date("%I:%M %p", player.last_seen)
 					else
 						lastSeen = os.date("%x %I:%M %p", player.last_seen)
 					end
-				
+
 					line:SetColumnText(1, player.name)
 					line:SetColumnText(3, player.ip)
 					line:SetColumnText(4, firstSeen)
 					line:SetColumnText(5, lastSeen)
-					
+
 					found = true
 					break
 				end
 			end
-			
+
 			if not found then
 				local t = {}
 				t[steamID] = player
@@ -261,14 +257,14 @@ xgui.hookEvent("playertracker", "process", xplayertracker.populate)
 xgui.hookEvent("playertracker", "clear", xplayertracker.clear)
 xgui.hookEvent("playertracker", "add", xplayertracker.update)
 
-function xplayertracker.searchRecievedData(id, data)	
+function ulx.PlayerTracker.xgui.searchRecievedData(id, data)
 	if id == xplayertracker.searchID then
 		table.Merge(xplayertracker.searchData, data)
 		xplayertracker.populate(data, true)
 	end
 end
 
-function xplayertracker.searchCompleted(id)
+function ulx.PlayerTracker.xgui.searchCompleted(id)
 	if id == xplayertracker.searchID then
 		xplayertracker.loading:SetVisible(false)
 	end
@@ -296,10 +292,10 @@ function xplayertracker.showBanWindow(name, steamID)
 		xlib.makelabel{ x=14, y=122, label="Global Ban:", parent=xgui_banwindow }
 		globalBan = xlib.makecheckbox{x=75, y=122, parent=xgui_banwindow}
 	end
-	
+
 	local steamIDBox = xlib.maketextbox{x=75, y=30, w=200, selectall=true, disabled=true, parent=xgui_banwindow}
 	steamIDBox:SetValue(steamID)
-	
+
 	xlib.makebutton{x=165, y=145, w=75, label="Cancel", parent=xgui_banwindow}.DoClick = function()
 		xgui_banwindow:Remove()
 	end
@@ -327,17 +323,17 @@ end
 ---------------
 
 -- Opens the XGUI tab and searches for the specified steamID
-function xplayertracker.trackSteamID(steamID)	
+function xplayertracker.trackSteamID(steamID)
 	xgui.show("Players")
-	
+
 	xplayertracker.search:SetValue(steamID)
 	xplayertracker.search.OnEnter()
 end
 
 -- Opens the XGUI tab and searches for the specified steamID
-function xplayertracker.trackIP(steamID)	
+function xplayertracker.trackIP(steamID)
 	xgui.show("Players")
-	
+
 	local data = getPlayerData(steamID)
 	xplayertracker.search:SetValue(data.ip)
 	xplayertracker.search.OnEnter()
