@@ -26,7 +26,7 @@ xplayertracker.search.OnEnter = function()
 
 			RunConsoleCommand("_xgui", "pt_search", xplayertracker.searchID, (xplayertracker.exactMatch:GetChecked() and "1" or "0"), xplayertracker.search:GetValue())
 		else
-			Derma_Query("That search would be too broad!", "Expensive Search Term", "Okay")
+			Derma_Query("That search would be too broad!\nPlease use names longer than three characters when looking for non-exact matches. ", "Expensive Search Term", "Okay")
 		end
 	elseif xplayertracker.isSearching then
 		xplayertracker.list:Clear()
@@ -128,6 +128,7 @@ xplayertracker.list.OnRowRightClick = function(self, id, line)
 		ban:SetTextInset(0,0)
 	end
 
+    -- Compatiblity with Prism's ULX TTT addon (unreleased)
 	if LocalPlayer():query("ulx addslayid") then
 		local addslay = menu:AddOption("Add Slay", function()
 			RunConsoleCommand("ulx", "addslayid", steamID)
@@ -287,6 +288,7 @@ function xplayertracker.showBanWindow(name, steamID)
 	banpanel.val:SetPos(75, 100)
 	banpanel.val:SetWidth(200)
 
+    -- Compatiblity with Prism's MySQL bans addon (unreleased)
 	local globalBan
 	if LocalPlayer():query("ulx gban") or LocalPlayer():query("ulx gbanid") then
 		xlib.makelabel{ x=14, y=122, label="Global Ban:", parent=xgui_banwindow }

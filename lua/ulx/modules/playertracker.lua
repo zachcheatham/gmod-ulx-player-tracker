@@ -2,11 +2,9 @@ ulx.PlayerTracker = {}
 
 include("playertracker/config.lua")
 include("playertracker/data.lua")
-include("playertracker/hooks.lua")
 include("playertracker/familysharing.lua")
-include("playertracker/legacy.lua")
 
-function ulx.PlayerTracker.updatePlayer(ply, steamID)
+local function updatePlayer(ply, steamID)
 	if not IsValid(ply) then return end
 
 	local ip = ZCore.Util.removePortFromIP(ply:IPAddress())
@@ -62,3 +60,4 @@ function ulx.PlayerTracker.updatePlayer(ply, steamID)
 		end
 	end)
 end
+hook.Add("PlayerAuthed", "PlayerConnectionTracker", updatePlayer)
