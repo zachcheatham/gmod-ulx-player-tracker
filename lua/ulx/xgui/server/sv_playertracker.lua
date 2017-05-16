@@ -3,7 +3,7 @@ local DATA_NAMES_CHUNK_SIZE = 100
 local RECENT_PLAYERS_SIZE = 100
 
 ulx.PlayerTracker.xgui = {}
-local recentPlayers = false
+local recentPlayers = {}
 
 -- Grabs players who are activated and have permissions to view playertracker
 local function getReadyPlayers()
@@ -32,19 +32,43 @@ local function preparePlayerData(data)
 	return newData
 end
 
--- Removes the oldest player from the recent players table
-local function removeOldestRecent()
-	local oldestSteamID
-	local oldestTimestamp
+local function removeOldRecents()
+	local recentTableOverflow = table.Count(recentPlayers) - RECENT_PLAYERS_SIZE
 
-	for steamID, playerData in pairs(recentPlayers) do
-		if not oldestTimestamp or playerData.last_seen < oldestTimestamp then
-			oldestSteamID = steamID
-			oldestTimestamp = playerData.last_seen
-		end
+    -- Remove old recents so we don't use up all our memory!
+    -- Helps servers that don't change map often e.g. sandbox and darkrp
+	while recentTableOverflow > 0 do
+        local oldestSteamID
+    	local oldestTimestamp
+
+        -- Because our table is keyed by steamids, this is kinda inefficient
+        -- although the outer loop should only run once per player join
+    	for steamID, playerData in pairs(recentPlayers) do
+    		if not oldestTimestamp or playerData.last_seen < oldestTimestamp then
+    			oldestSteamID = steamID
+    			oldestTimestamp = playerData.last_seen
+    		end
+    	end
+
+    	recentPlayers[oldestSteamID] = nil
+		recentTableOverflow = recentTableOverflow - 1
 	end
+end
 
-	readyPlayers[oldestSteamID] = nil
+-- Data should already be normalized coming into here (preparePlayerData)
+local function addToRecents(steamID, playerData, removeOld)
+    if removeOld == nil then removeOld = true end
+
+    -- Just in case we're sent only part of some player data (Possible from Family Sharing)
+    if recentPlayers[steamID] then
+        table.Merge(recentPlayers[steamID], playerData)
+    else
+        recentPlayers[steamID] = playerData
+    end
+
+    if removeOld then
+        removeOldRecents()
+    end
 end
 
 function ulx.PlayerTracker.xgui.addPlayer(steamID, playerData)
@@ -56,45 +80,46 @@ function ulx.PlayerTracker.xgui.addPlayer(steamID, playerData)
 		xgui.addData(sendPlys, "playertracker", t)
 	end
 
-	-- Insert into local recents table
-	if recentPlayers and not recentPlayers[steamID] then
-		recentPlayers[steamID] = t[steamID]
-
-		local recentTableOverflow = table.Count(readPlayers) - RECENT_PLAYERS_SIZE
-
-		if recentTableOverflow > 1 then
-			ServerLog("[PlayerTracker] Warning: Recent players table has an overflow greater than one. This is a sign of a programming error!")
-		end
-
-		while recentTableOverflow > 0 do
-			removeOldestRecent()
-			recentTableOverflow = recentTableOverflow - 1
-		end
-	end
+    addToRecents(steamID, t[steamID])
 end
 
-local function getRecents()
-	if not recentPlayers then
-		ulx.PlayerTracker.fetchRecentPlayers(function(players)
+-- Called to populate recent players
+local function fetchRecents(firstConnect)
+    -- Don't fetch players again on MySQL reconnect
+    -- This would only occur when the server loses connection
+    if firstConnect then
+        ulx.PlayerTracker.fetchRecentPlayers(function(players)
+            -- Save existing recents
+            local oldRecents = recentPlayers
+
 			recentPlayers = {}
 			for _, v in ipairs(players) do
 				recentPlayers[v.steamid] = preparePlayerData(v)
 			end
 
-			-- This is causing dupes
-			/*local sendPlys = getReadyPlayers()
-			if #sendPlys > 0 then
-				xgui.addData(sendPlys, "playertracker", recentPlayers)
-			end*/
-		end)
+            -- Merge queued updates in. Keeps us fresh.
+            if table.Count(oldRecents) > 0 then
+                for steamID, data in pairs(oldRecents) do
+                    addToRecents(steamID, data, false)
+                end
+                removeOldRecents()
+            end
 
-		recentPlayers = {} -- Make this not false because xgui tends to call this function multiple times in a row
-		return {}
-	else
-		return recentPlayers
-	end
+            -- Send the fetched data to clients in the case that they've
+            -- requested XGUI data before MySQL processed our query.
+			local readyPlayers = getReadyPlayers()
+			if #readyPlayers > 0 then
+				xgui.addData(readyPlayers, "playertracker", recentPlayers)
+			end
+		end)
+    end
 end
---hook.Add("ZCore_MySQL_Connected", "XGUI_GetPlayers", getRecents)
+hook.Add("ZCore_MySQL_Connected", "xgui_pt_fetchrecent", fetchRecents)
+
+-- Called when an XGUI client requests the list of recent players
+local function getRecentPlayers()
+    return recentPlayers || {}
+end
 
 local function search(ply, args)
 	local searchID = args[1]
@@ -148,7 +173,7 @@ end
 local function init()
 	ULib.ucl.registerAccess("xgui_playertracker", "admin", "Allows admins to view player tracker.", "XGUI")
 
-	xgui.addDataType("playertracker", getRecents, "xgui_playertracker", DATA_CHUNK_SIZE, 0)
+	xgui.addDataType("playertracker", getRecentPlayers, "xgui_playertracker", DATA_CHUNK_SIZE, 0)
 
 	xgui.addCmd("pt_search", search)
 	xgui.addCmd("pt_names", getNames)
