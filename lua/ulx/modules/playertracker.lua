@@ -1,7 +1,13 @@
+local USE_MYSQL = false
+
 ulx.PlayerTracker = {}
 
 include("playertracker/config.lua")
-include("playertracker/data.lua")
+if USE_MYSQL then
+    include("playertracker/data_mysql.lua")
+else
+    include("playertracker/data_sqlite.lua")
+end
 include("playertracker/familysharing.lua")
 
 local function updatePlayer(ply, steamID)
@@ -13,9 +19,8 @@ local function updatePlayer(ply, steamID)
 	ulx.PlayerTracker.fetchPlayer(steamID, function(playerData)
 		-- My name is DarkRP and I use nicknames
 		local currentName = (GetConVarString("gamemode") == "darkrp") and ply:SteamName() or ply:Name()
-
+		
 		if playerData then
-			local escapedName = ""
 			local nameChange = false
 			local ipChange = false
 
@@ -29,8 +34,7 @@ local function updatePlayer(ply, steamID)
 				nameChange = true
 				playerData.name = currentName
 
-				escapedName = ZCore.MySQL.escapeStr(playerData.name, true)
-				ulx.PlayerTracker.insertName(steamID, escapedName)
+				ulx.PlayerTracker.insertName(steamID, currentName)
 			end
 
 			if playerData.ip ~= ip then
@@ -40,9 +44,9 @@ local function updatePlayer(ply, steamID)
 				playerData.ip = ip
 			end
 
-			ulx.PlayerTracker.savePlayerUpdate(steamID, (nameChange and escapedName or false), (ipChange and playerData.ip or false), (ipChange and playerData.ip_2 or false), (ipChange and playerData.ip_3 or false))
+			ulx.PlayerTracker.savePlayerUpdate(steamID, (nameChange and currentName or false), (ipChange and playerData.ip or false), (ipChange and playerData.ip_2 or false), (ipChange and playerData.ip_3 or false))
 			ulx.PlayerTracker.xgui.addPlayer(steamID, playerData)
-		else
+		else			
 			local data = {}
 			data.name = currentName
 			data.ip = ip
