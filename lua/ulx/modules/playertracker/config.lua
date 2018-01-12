@@ -27,7 +27,11 @@ net.Receive("ulx_playertracker_steamapikey", function(len, ply)
     end
 end)
 
-hiddenSettings = ULib.parseKeyValues(ULib.fileRead("data/ulx/playertracker.txt"))
+if file.Exists("ulx/playertracker.txt", "data") then
+    hiddenSettings = ULib.parseKeyValues(ULib.fileRead("data/ulx/playertracker.txt"))
+else
+    ULib.fileWrite("data/ulx/playertracker.txt", ULib.makeKeyValues(hiddenSettings))
+end
 apikeycvar:SetString(hiddenSettings["steamapikey"] or "")
 
 ulx.convar("playertrackernamealert", 1, "Announce when players connect with a new name.", ULib.ACCESS_SUPERADMIN)
