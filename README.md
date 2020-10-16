@@ -28,7 +28,7 @@ A simple (okay, maybe its a little complex) system that logs every player that j
 ## Installation
 1. Obviously, you must already have ULib and ULX installed.
 2. Download this repository and place it inside your server's addons folder.
-3. Download [ZCore][https://github.com/zachcheatham/gmod-zcore) and place it inside your server's addons folder.
+3. Download (ZCore)[https://github.com/zachcheatham/gmod-zcore] and place it inside your server's addons folder.
 4. Make sure you've configured ZCore's configuration file with your MySQL credentials.
 5. If you want to use Family Sharing, edit the first line of lua/ulx/modules/playertracker/familysharing.lua with your Steam API key.
 6. Start up your server! All of the MySQL tables should be automatically created for you when it launches.
